@@ -1,0 +1,149 @@
+// prisma/schema.prisma
+
+datasource db {
+  provider = "sqlite"
+  url      = env("DATABASE_URL")
+}
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+model User {
+  id           String        @id @default(uuid())
+  email        String        @unique
+  passwordHash String
+  name         String
+  role         String        // STUDENT, FACULTY, COORDINATOR, ADMIN
+  createdAt    DateTime      @default(now())
+  updatedAt    DateTime      @updatedAt
+  student      Student?
+  faculty      Faculty?
+  coordinator  Coordinator?
+}
+
+model Department {
+  id       String    @id @default(uuid())
+  name     String    @unique
+  code     String    @unique
+  programs Program[]
+  students Student[]
+}
+
+model Program {
+  id           String     @id @default(uuid())
+  name         String
+  code         String     @unique
+  departmentId String
+  department   Department @relation(fields: [departmentId], references: [id])
+  students     Student[]
+}
+
+model Student {
+  id                String                @id @default(uuid())
+  userId            String                @unique
+  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rollNumber        String                @unique
+  departmentId      String
+  department        Department            @relation(fields: [departmentId], references: [id])
+  programId         String
+  program           Program               @relation(fields: [programId], references: [id])
+  currentSemester   Int
+  batch             String
+  cgpa              Float
+  sgpa              Float
+  attendance        Float
+  profileCompletion Int                   @default(80)
+  activities        Activity[]
+  contributions     ProjectContribution[]
+}
+
+model Faculty {
+  id              String            @id @default(uuid())
+  userId          String            @unique
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  department      String
+  activities      Activity[]        @relation("FacultyReviewer")
+  contributions   ProjectContribution[] @relation("FacultyContributionReviewer")
+}
+
+model Coordinator {
+  id            String            @id @default(uuid())
+  userId        String            @unique
+  user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
+  scope         String            // E.g., "ACM Club", "MumbaiHacks"
+  activities    Activity[]        @relation("CoordinatorReviewer")
+}
+
+model Activity {
+  id                    String            @id @default(uuid())
+  studentId             String
+  student               Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  type                  String            // Workshop, Seminar, Hackathon, YouTube Learning, etc.
+  title                 String
+  date                  DateTime
+  organiser             String
+  role                  String
+  description           String
+  outcome               String?
+  evidenceUrl           String?
+  evidenceType          String?           // PDF, Image, URL, Document
+  externalLink          String?
+  verificationRoute     String            // ADMIN_INSTITUTIONAL, FACULTY_TG, EVENT_COORDINATOR, SELF_DECLARED
+  status                String            @default("DRAFT") // DRAFT, SUBMITTED, UNDER_REVIEW, VERIFIED, RETURNED, REJECTED, SELF_DECLARED
+  reviewerId            String?           // ID of the reviewer (faculty or coordinator)
+  reviewerName          String?
+  reviewerComment       String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  logs                  VerificationLog[]
+  
+  // Relations back to Faculty and Coordinator
+  facultyReviewerId     String?
+  facultyReviewer       Faculty?          @relation("FacultyReviewer", fields: [facultyReviewerId], references: [id])
+  coordinatorReviewerId String?
+  coordinatorReviewer   Coordinator?      @relation("CoordinatorReviewer", fields: [coordinatorReviewerId], references: [id])
+}
+
+model ProjectContribution {
+  id                    String            @id @default(uuid())
+  studentId             String
+  student               Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  projectName           String
+  projectDesc           String
+  startDate             DateTime
+  endDate               DateTime
+  repoUrl               String?
+  demoUrl               String?
+  projectEvidence       String?
+  role                  String            // Backend Developer, Designer, etc.
+  contribution          String            // Designed REST APIs, database integration, etc.
+  technologies          String            // Comma-separated list: "Node.js, Express, PostgreSQL"
+  verificationRoute     String            @default("FACULTY_TG") // FACULTY_TG, SELF_DECLARED
+  status                String            @default("DRAFT") // DRAFT, SUBMITTED, UNDER_REVIEW, VERIFIED, RETURNED, REJECTED, SELF_DECLARED
+  reviewerId            String?           // ID of the reviewer (faculty)
+  reviewerName          String?
+  reviewerComment       String?
+  createdAt             DateTime          @default(now())
+  updatedAt             DateTime          @updatedAt
+  logs                  VerificationLog[]
+
+  // Relations back to Faculty
+  facultyReviewerId     String?
+  facultyReviewer       Faculty?          @relation("FacultyContributionReviewer", fields: [facultyReviewerId], references: [id])
+}
+
+model VerificationLog {
+  id             String               @id @default(uuid())
+  activityId     String?
+  activity       Activity?            @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  contributionId String?
+  contribution   ProjectContribution? @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  actorId        String
+  actorName      String
+  action         String               // SUBMIT, VERIFY, RETURN, REJECT
+  previousStatus String
+  newStatus      String
+  comment        String?
+  createdAt      DateTime             @default(now())
+}
