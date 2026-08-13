@@ -13,6 +13,7 @@ export async function POST(request: Request) {
         student: true,
         faculty: true,
         coordinator: true,
+        principal: true,
       },
     });
 
@@ -30,6 +31,8 @@ export async function POST(request: Request) {
       profileId = user.faculty?.id || '';
     } else if (user.role === 'COORDINATOR') {
       profileId = user.coordinator?.id || '';
+    } else if (user.role === 'PRINCIPAL') {
+      profileId = user.principal?.id || '';
     }
 
     await setSession({

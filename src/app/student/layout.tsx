@@ -3,7 +3,7 @@ import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import Link from 'next/link';
-import { LayoutDashboard, CreditCard, Award, Code, Printer, User, LogOut, AwardIcon } from 'lucide-react';
+import { LayoutDashboard, CreditCard, Award, Code, Printer, User, LogOut, GraduationCap } from 'lucide-react';
 import React from 'react';
 
 interface LayoutProps {
@@ -33,6 +33,9 @@ export default async function StudentLayout({ children }: LayoutProps) {
   const navItems = [
     { name: 'Dashboard', href: '/student/dashboard', icon: LayoutDashboard },
     { name: 'My Passport', href: '/student/passport', icon: CreditCard },
+    { name: 'My Profile', href: '/student/profile', icon: User },
+    { name: 'My Skills', href: '/student/skills', icon: Code },
+    { name: 'Academic Snapshot', href: '/student/academic', icon: GraduationCap },
     { name: 'Reports', href: '/student/reports', icon: Printer },
   ];
 

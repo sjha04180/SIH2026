@@ -5,8 +5,8 @@ export interface SessionUser {
   userId: string;
   email: string;
   name: string;
-  role: 'STUDENT' | 'FACULTY' | 'COORDINATOR' | 'ADMIN';
-  profileId: string; // The specific profile ID (e.g., studentId, facultyId, coordinatorId)
+  role: 'STUDENT' | 'FACULTY' | 'COORDINATOR' | 'ADMIN' | 'PRINCIPAL';
+  profileId: string; // The specific profile ID
 }
 
 const COOKIE_NAME = 'sih_session';

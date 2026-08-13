@@ -19,12 +19,16 @@ import {
   ArrowRight,
   GraduationCap,
   Building,
-  Info
+  Info,
+  Globe,
+  Tag
 } from 'lucide-react';
 
 interface PassportClientProps {
   initialActivities: any[];
   initialProjects: any[];
+  profileLinks: any[];
+  studentSkills: any[];
   studentInfo: {
     name: string;
     rollNumber: string;
@@ -33,10 +37,18 @@ interface PassportClientProps {
     attendance: number;
     program: string;
     department: string;
+    profileSummary: string | null;
+    interests: string | null;
   };
 }
 
-export default function PassportClient({ initialActivities, initialProjects, studentInfo }: PassportClientProps) {
+export default function PassportClient({ 
+  initialActivities, 
+  initialProjects, 
+  profileLinks, 
+  studentSkills, 
+  studentInfo 
+}: PassportClientProps) {
   const [activeTab, setActiveTab] = useState<'view' | 'add-activity' | 'add-project'>('view');
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
@@ -85,7 +97,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
       return {
         route: 'Event/SIG Coordinator',
         desc: 'This activity requires verification from the designated Event Coordinator or Club head. Proof of participation/certificates must be uploaded.',
-        style: 'bg-amber-50 text-amber-900 border-amber-200'
+        style: 'bg-amber-50 text-amber-900 border-amber-250'
       };
     } else if (facultyTypes.includes(type)) {
       return {
@@ -97,7 +109,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
       return {
         route: 'Self-Declared — No Verification Queue',
         desc: 'Low-risk personal study or learning activities. No mandatory proof is required. This record will directly be added to your Passport as Self-Declared / Unverified.',
-        style: 'bg-slate-100 text-slate-700 border-slate-300'
+        style: 'bg-slate-100 text-slate-700 border-slate-355'
       };
     }
   };
@@ -145,6 +157,19 @@ export default function PassportClient({ initialActivities, initialProjects, stu
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // File validation: PDF, JPG, JPEG, PNG, WEBP and size limit (5MB)
+    const allowedTypes = ['application/pdf', 'image/png', 'image/jpeg', 'image/jpg', 'image/webp'];
+    if (!allowedTypes.includes(file.type)) {
+      alert('Only PDF, JPG, JPEG, PNG, or WEBP evidence files are allowed.');
+      e.target.value = '';
+      return;
+    }
+    if (file.size > 5 * 1024 * 1024) {
+      alert('Evidence file size must not exceed 5MB.');
+      e.target.value = '';
+      return;
+    }
+
     if (target === 'activity') {
       setUploadingAct(true);
       setUploadedActName('');
@@ -168,7 +193,6 @@ export default function PassportClient({ initialActivities, initialProjects, stu
       if (target === 'activity') {
         setActEvidenceUrl(data.url);
         setUploadedActName(data.fileName);
-        // Automatically classify file type
         if (file.type === 'application/pdf') {
           setActEvidenceType('PDF');
         } else if (file.type.startsWith('image/')) {
@@ -221,7 +245,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add activity');
 
-      // Reset form
+      // Reset
       setActTitle('');
       setActDate('');
       setActOrganiser('');
@@ -266,7 +290,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add project');
 
-      // Reset form
+      // Reset
       setProjName('');
       setProjDesc('');
       setProjStartDate('');
@@ -287,7 +311,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
     }
   };
 
-  // Combine & Filter activities/projects
+  // Combine & Filter
   const categorisedItems = [
     ...initialActivities.map(a => ({
       ...a,
@@ -299,7 +323,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
       id: c.id,
       title: c.projectName,
       type: 'Project Contribution',
-      organiser: 'Academic / Personal',
+      organiser: 'Academic / Team',
       role: c.role,
       description: `Project: ${c.projectDesc}\nContribution: ${c.contribution}`,
       outcome: `Technologies: ${c.technologies}`,
@@ -316,31 +340,122 @@ export default function PassportClient({ initialActivities, initialProjects, stu
   ];
 
   const filteredItems = categorisedItems.filter(item => {
-    // Category filter
     if (categoryFilter !== 'all') {
       if (categoryFilter === 'technical' && !['Hackathon', 'Project Contribution', 'Project'].includes(item.type)) return false;
-      if (categoryFilter === 'self-learning' && !['Self-learning'].includes(item.type)) return false;
+      if (categoryFilter === 'self-learning' && !['Self-learning', 'YouTube Learning', 'Self-study', 'Personal Practice', 'Unhosted Personal Project'].includes(item.type)) return false;
       if (categoryFilter === 'co-curricular' && !['Workshop', 'Seminar', 'Competition', 'Club/SIG Participation'].includes(item.type)) return false;
       if (categoryFilter === 'achievements' && !['Award', 'Certification'].includes(item.type)) return false;
       if (categoryFilter === 'academic' && !['Internship', 'Research', 'Publication'].includes(item.type)) return false;
     }
-
-    // Status filter
     if (statusFilter !== 'all' && item.status !== statusFilter) return false;
-
     return true;
   });
 
   return (
-    <div className="space-y-6">
-      {/* Top Banner and Tabs */}
+    <div className="space-y-6 font-sans">
+      
+      {/* Profile Header Passport style */}
+      <div className="bg-gradient-to-r from-indigo-950 to-slate-900 border border-slate-800 rounded-2xl p-6 md:p-8 text-slate-100 shadow-md space-y-6">
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-6">
+          <div>
+            <div className="flex items-center space-x-3">
+              <span className="text-[10px] uppercase font-bold tracking-widest text-indigo-300 bg-indigo-900/60 px-3 py-1 rounded-full border border-indigo-850">
+                Official Passport Records
+              </span>
+              <span className="text-xs font-mono text-slate-400">Roll: {studentInfo.rollNumber}</span>
+            </div>
+            <h2 className="text-2xl md:text-3xl font-extrabold text-white mt-3 tracking-tight">
+              {studentInfo.name}
+            </h2>
+            <p className="text-slate-350 text-xs md:text-sm mt-1">
+              {studentInfo.program} &bull; {studentInfo.department}
+            </p>
+          </div>
+
+          <div className="flex items-center space-x-6">
+            <div className="text-center">
+              <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">CGPA</span>
+              <span className="text-2xl font-extrabold text-white block mt-0.5">{studentInfo.cgpa.toFixed(2)}</span>
+            </div>
+            <div className="w-px bg-slate-850 h-8 shrink-0" />
+            <div className="text-center">
+              <span className="text-[9px] uppercase font-bold text-slate-400 block tracking-wider">Attendance</span>
+              <span className="text-2xl font-extrabold text-white block mt-0.5">{studentInfo.attendance.toFixed(1)}%</span>
+            </div>
+          </div>
+        </div>
+
+        {/* Profile Summary Bio */}
+        {studentInfo.profileSummary && (
+          <div className="border-t border-slate-850 pt-4 text-xs text-slate-300 leading-relaxed max-w-2xl whitespace-pre-line">
+            <span className="block font-bold text-[9px] uppercase tracking-wider text-slate-400 mb-1.5">Profile Summary</span>
+            "{studentInfo.profileSummary}"
+          </div>
+        )}
+
+        {/* Profile Links & Skills Badges */}
+        <div className="flex flex-col md:flex-row justify-between border-t border-slate-850 pt-4 gap-4 text-xs">
+          
+          {/* Profile Links */}
+          <div className="space-y-2 flex-1">
+            <span className="block font-bold text-[9px] uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Globe className="w-3.5 h-3.5 text-indigo-400" /> Professional links
+            </span>
+            <div className="flex flex-wrap gap-2">
+              {profileLinks.length === 0 ? (
+                <span className="text-slate-500 italic text-[11px]">No links uploaded. Add links in profile page.</span>
+              ) : (
+                profileLinks.map(link => (
+                  <a
+                    key={link.id}
+                    href={link.profileUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="inline-flex items-center space-x-1.5 bg-slate-850 hover:bg-slate-800 border border-slate-800 hover:border-slate-700 px-3 py-1 rounded-lg text-slate-300 transition-colors hover:text-white"
+                  >
+                    <span className="font-semibold text-[10px] uppercase">{link.platformName}</span>
+                    <ExternalLink className="w-3 h-3 text-slate-400" />
+                  </a>
+                ))
+              )}
+            </div>
+          </div>
+
+          {/* Technical Skills declarations */}
+          <div className="space-y-2 flex-1 border-t md:border-t-0 md:border-l border-slate-850 pt-4 md:pt-0 md:pl-6">
+            <span className="block font-bold text-[9px] uppercase tracking-wider text-slate-400 flex items-center gap-1.5">
+              <Code className="w-3.5 h-3.5 text-indigo-400" /> Declared Skills
+            </span>
+            <div className="flex flex-wrap gap-1.5">
+              {studentSkills.length === 0 ? (
+                <span className="text-slate-500 italic text-[11px]">No skills declared. Manage in skills page.</span>
+              ) : (
+                studentSkills.map(stSk => (
+                  <span
+                    key={stSk.id}
+                    className={`inline-flex px-2 py-0.5 rounded border text-[10px] font-bold ${
+                      stSk.status === 'VERIFIED'
+                        ? 'bg-emerald-950/60 border-emerald-900 text-emerald-300'
+                        : 'bg-slate-850 border-slate-800 text-slate-300'
+                    }`}
+                  >
+                    {stSk.skill.name} &bull; {stSk.level}
+                  </span>
+                ))
+              )}
+            </div>
+          </div>
+
+        </div>
+      </div>
+
+      {/* Tabs Menu */}
       <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4 gap-4">
         <div>
-          <h1 className="text-2xl font-bold text-slate-900">Student Development Passport</h1>
-          <p className="text-slate-500 text-xs mt-1">Capture, routing verification, and report dashboard.</p>
+          <h2 className="text-lg font-bold text-slate-900">Development Ledger</h2>
+          <p className="text-slate-500 text-xs mt-1">Audit trail of all activities, hackathons, and certifications.</p>
         </div>
-        
-        {/* Navigation Tabs */}
+
         <div className="flex bg-slate-100 p-1 rounded-xl border border-slate-200 shrink-0">
           <button
             onClick={() => setActiveTab('view')}
@@ -348,7 +463,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
               activeTab === 'view' ? 'bg-white shadow-sm text-indigo-950 font-bold' : 'text-slate-600 hover:text-slate-900'
             }`}
           >
-            My Passport
+            My Passport Ledger
           </button>
           <button
             onClick={() => setActiveTab('add-activity')}
@@ -371,23 +486,23 @@ export default function PassportClient({ initialActivities, initialProjects, stu
         </div>
       </div>
 
-      {/* Tab Content 1: VIEW PASSPORT */}
+      {/* Tab 1: VIEW PASSPORT */}
       {activeTab === 'view' && (
         <div className="space-y-6">
-          {/* Filters Bar */}
+          {/* Filters */}
           <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm flex flex-col md:flex-row md:items-center justify-between gap-4">
             <div className="flex flex-wrap items-center gap-3">
               <span className="text-xs font-bold text-slate-500 uppercase tracking-wider">Filter Category:</span>
               <select
                 value={categoryFilter}
                 onChange={(e) => setCategoryFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-900"
+                className="bg-slate-55 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none"
               >
                 <option value="all">All Categories</option>
-                <option value="academic">Academic (Internship/Research)</option>
+                <option value="academic">Academic (Internships/Research)</option>
                 <option value="technical">Technical (Projects/Hackathons)</option>
                 <option value="co-curricular">Co-curricular (Workshops/Seminars)</option>
-                <option value="self-learning">Self-learning</option>
+                <option value="self-learning">Self-learning / Online study</option>
                 <option value="achievements">Achievements & Awards</option>
               </select>
 
@@ -395,7 +510,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
               <select
                 value={statusFilter}
                 onChange={(e) => setStatusFilter(e.target.value)}
-                className="bg-slate-50 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none focus:ring-1 focus:ring-indigo-900"
+                className="bg-slate-55 border border-slate-200 rounded-lg px-3 py-1.5 text-xs text-slate-700 font-semibold focus:outline-none"
               >
                 <option value="all">All Statuses</option>
                 <option value="VERIFIED">Verified</option>
@@ -407,16 +522,16 @@ export default function PassportClient({ initialActivities, initialProjects, stu
             </div>
             
             <div className="text-xs text-slate-500 font-semibold">
-              Showing {filteredItems.length} of {categorisedItems.length} total records
+              Ledger displays {filteredItems.length} records
             </div>
           </div>
 
-          {/* List of Cards */}
+          {/* Cards List */}
           {filteredItems.length === 0 ? (
             <div className="bg-white border border-slate-200 rounded-2xl p-12 text-center text-slate-500">
               <Info className="w-8 h-8 mx-auto text-slate-400 mb-3" />
-              <h3 className="font-bold text-slate-800 text-sm">No Passport Records Found</h3>
-              <p className="text-xs text-slate-500 mt-1">Try changing your filters or add your first development activity.</p>
+              <h3 className="font-bold text-slate-800 text-sm">No Ledger Records Found</h3>
+              <p className="text-xs text-slate-500 mt-1">Try changing filters or submit another developmental record.</p>
             </div>
           ) : (
             <div className="space-y-4">
@@ -424,14 +539,13 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                 <div 
                   key={item.id} 
                   className={`bg-white border rounded-2xl shadow-sm p-6 flex flex-col md:flex-row justify-between gap-6 transition-all ${
-                    item.status === 'VERIFIED' ? 'border-l-4 border-l-emerald-500 border-slate-200' :
-                    item.status === 'RETURNED' ? 'border-l-4 border-l-orange-500 border-slate-200' :
-                    item.status === 'REJECTED' ? 'border-l-4 border-l-red-500 border-slate-200' :
-                    item.status === 'SELF_DECLARED' ? 'border-l-4 border-l-blue-400 border-slate-200' : 'border-slate-200'
+                    item.status === 'VERIFIED' ? 'border-l-4 border-l-emerald-500' :
+                    item.status === 'RETURNED' ? 'border-l-4 border-l-orange-500' :
+                    item.status === 'REJECTED' ? 'border-l-4 border-l-red-500' :
+                    item.status === 'SELF_DECLARED' ? 'border-l-4 border-l-blue-400' : 'border-slate-200'
                   }`}
                 >
                   <div className="space-y-4 flex-1 min-w-0">
-                    {/* Header line */}
                     <div className="flex flex-wrap items-center gap-2">
                       <span className="text-[10px] uppercase font-extrabold tracking-wider bg-slate-100 text-slate-700 px-2.5 py-0.5 rounded border border-slate-250">
                         {item.type}
@@ -440,59 +554,66 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                       <div className="shrink-0">{getStatusBadge(item.status)}</div>
                     </div>
 
-                    {/* Title & Desc */}
                     <div>
                       <h3 className="text-base font-bold text-slate-950 truncate">{item.title}</h3>
-                      <p className="text-xs text-slate-600 mt-2 whitespace-pre-line leading-relaxed">{item.description}</p>
+                      <p className="text-xs text-slate-655 mt-2 whitespace-pre-line leading-relaxed">{item.description}</p>
                     </div>
 
-                    {/* Meta info block */}
+                    {/* Technological badges for projects */}
+                    {item.type === 'Project Contribution' && item.technologies && (
+                      <div className="flex flex-wrap gap-1.5 pt-1">
+                        {item.technologies.split(',').map((tech: string) => (
+                          <span key={tech} className="inline-flex items-center bg-indigo-50 border border-indigo-150 text-indigo-900 px-2 py-0.5 rounded text-[10px] font-bold">
+                            <Tag className="w-2.5 h-2.5 mr-1 text-indigo-400" />
+                            {tech.trim()}
+                          </span>
+                        ))}
+                      </div>
+                    )}
+
                     <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-4 border-t border-slate-100 pt-3 text-xs">
                       <div>
-                        <span className="text-slate-400 block font-semibold text-[10px] uppercase">Organiser / Source:</span>
+                        <span className="text-slate-400 block font-bold text-[9px] uppercase">Organiser / Platform</span>
                         <span className="font-semibold text-slate-700">{item.organiser}</span>
                       </div>
                       <div>
-                        <span className="text-slate-400 block font-semibold text-[10px] uppercase">My Role / Context:</span>
+                        <span className="text-slate-400 block font-bold text-[9px] uppercase">My Role</span>
                         <span className="font-semibold text-slate-700">{item.role}</span>
                       </div>
                       {item.outcome && (
                         <div>
-                          <span className="text-slate-400 block font-semibold text-[10px] uppercase">Outcome / Stack:</span>
+                          <span className="text-slate-400 block font-bold text-[9px] uppercase">Outcome / Summary</span>
                           <span className="font-semibold text-slate-700 truncate block">{item.outcome}</span>
                         </div>
                       )}
                     </div>
 
-                    {/* Verification Log comment (Returned / Verified) */}
                     {item.reviewerComment && (
                       <div className="bg-slate-50 border border-slate-200 rounded-xl p-3.5 text-xs text-slate-700">
                         <strong className="text-slate-900 block mb-0.5">
-                          Review comment from {item.reviewerName || 'Reviewer'}:
+                          Review feedback from {item.reviewerName || 'Reviewer'}:
                         </strong>
                         <p className="italic leading-relaxed">"{item.reviewerComment}"</p>
                       </div>
                     )}
                   </div>
 
-                  {/* Actions & Links */}
                   <div className="flex flex-col md:items-end justify-between shrink-0 gap-4 border-t md:border-t-0 md:border-l border-slate-100 pt-4 md:pt-0 md:pl-6">
                     <div className="text-xs text-slate-400 font-semibold md:text-right">
-                      <span className="block font-semibold text-[10px] uppercase tracking-wider">Verification Route</span>
+                      <span className="block font-bold text-[9px] uppercase tracking-wider">Verification Route</span>
                       <span className="text-slate-700 font-bold block mt-0.5">{item.verificationRoute.replace('_', ' ')}</span>
                     </div>
 
-                    {/* Attachments / Links */}
-                    <div className="flex flex-row md:flex-col gap-2.5">
+                    <div className="flex flex-row md:flex-col gap-2">
                       {item.evidenceUrl && (
                         <a
                           href={item.evidenceUrl}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center text-xs font-bold text-indigo-900 hover:text-indigo-950 border border-indigo-150 hover:bg-slate-50 px-3 py-1.5 rounded-lg shadow-sm bg-white"
+                          className="inline-flex items-center text-xs font-bold text-indigo-900 hover:text-indigo-950 border border-indigo-150 px-3 py-1.5 rounded-lg bg-white shadow-sm shrink-0"
                         >
                           <FileText className="w-3.5 h-3.5 mr-1.5" />
-                          <span>View Evidence</span>
+                          <span>View Proof</span>
                         </a>
                       )}
                       {item.externalLink && (
@@ -500,10 +621,10 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                           href={item.externalLink}
                           target="_blank"
                           rel="noopener noreferrer"
-                          className="inline-flex items-center text-xs font-bold text-slate-700 hover:text-slate-950 border border-slate-200 hover:bg-slate-50 px-3 py-1.5 rounded-lg shadow-sm bg-white"
+                          className="inline-flex items-center text-xs font-bold text-slate-700 hover:text-slate-950 border border-slate-200 px-3 py-1.5 rounded-lg bg-white shadow-sm shrink-0"
                         >
                           <ExternalLink className="w-3.5 h-3.5 mr-1.5" />
-                          <span>Visit URL</span>
+                          <span>Visit link</span>
                         </a>
                       )}
                     </div>
@@ -515,12 +636,12 @@ export default function PassportClient({ initialActivities, initialProjects, stu
         </div>
       )}
 
-      {/* Tab Content 2: RECORD ACTIVITY */}
+      {/* Tab 2: ADD ACTIVITY */}
       {activeTab === 'add-activity' && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50">
             <h2 className="text-lg font-bold text-slate-900">Record a Development Activity</h2>
-            <p className="text-xs text-slate-500 mt-1">All activities are classified dynamically to ensure verification goes only where needed.</p>
+            <p className="text-xs text-slate-500 mt-1">All activities are routed to specific verification authorities based on category config.</p>
           </div>
 
           <form onSubmit={handleAddActivity} className="p-6 space-y-6">
@@ -533,19 +654,19 @@ export default function PassportClient({ initialActivities, initialProjects, stu
             <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
               {/* Type Select */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Activity Type</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Activity Category</label>
                 <select
                   value={actType}
                   onChange={(e) => setActType(e.target.value)}
-                  className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900"
+                  className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none"
                 >
                   <option value="Hackathon">Hackathon</option>
                   <option value="Competition">Competition</option>
                   <option value="Workshop">Workshop</option>
                   <option value="Seminar">Seminar</option>
                   <option value="Club/SIG Participation">Club / SIG Participation</option>
-                  <option value="Project">Project (Self/Hosted)</option>
-                  <option value="Research">Research Work</option>
+                  <option value="Project">Project (hosted)</option>
+                  <option value="Research">Research paper</option>
                   <option value="Internship">Internship</option>
                   <option value="Award">Award</option>
                   <option value="Certification">Certification</option>
@@ -564,8 +685,8 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                   required
                   value={actTitle}
                   onChange={(e) => setActTitle(e.target.value)}
-                  placeholder="e.g. MumbaiHacks 2026, React.js Complete Guide"
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                  placeholder="e.g. Smart Campus Dev, Advanced Python Tutorial"
+                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                 />
               </div>
 
@@ -577,21 +698,21 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                   required
                   value={actOrganiser}
                   onChange={(e) => setActOrganiser(e.target.value)}
-                  placeholder="e.g. Mumbai Tech SIG, YouTube (Academind), TCS"
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                  placeholder="e.g. ACM chapter, Coursera, Youtube channel name"
+                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                 />
               </div>
 
               {/* Role */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">My Role / Context</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">My Role</label>
                 <input
                   type="text"
                   required
                   value={actRole}
                   onChange={(e) => setActRole(e.target.value)}
-                  placeholder="e.g. Participant, Lead Frontend, Recipient, Self-learner"
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                  placeholder="e.g. Lead dev, Attendee, Self-study student"
+                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                 />
               </div>
 
@@ -603,24 +724,23 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                   required
                   value={actDate}
                   onChange={(e) => setActDate(e.target.value)}
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                 />
               </div>
 
               {/* External URL */}
               <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Optional external link</label>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">External Reference URL (optional)</label>
                 <input
                   type="url"
                   value={actExternalLink}
                   onChange={(e) => setActExternalLink(e.target.value)}
-                  placeholder="e.g. GitHub Repository, Youtube Playlist Link"
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                  placeholder="https://..."
+                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                 />
               </div>
             </div>
 
-            {/* Description */}
             <div>
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Detailed Description</label>
               <textarea
@@ -628,24 +748,23 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                 rows={3}
                 value={actDesc}
                 onChange={(e) => setActDesc(e.target.value)}
-                placeholder="What did you learn or construct? Give solid context..."
-                className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                placeholder="Details of skills acquired, tools used..."
+                className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
               />
             </div>
 
-            {/* Outcome */}
             <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Learning Outcome / Output</label>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Learning Outcome</label>
               <input
                 type="text"
                 value={actOutcome}
                 onChange={(e) => setActOutcome(e.target.value)}
-                placeholder="e.g. Built a local blog, Learned custom state hooks, Won 2nd Runner Up"
-                className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                placeholder="e.g. Created local repository sandbox, received certified badge"
+                className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
               />
             </div>
 
-            {/* Progressive routing box (VERY IMPORTANT!) */}
+            {/* Routing indicator */}
             <div className={`p-4 rounded-xl border flex gap-3.5 transition-all ${routeInfo.style}`}>
               <Info className="w-5 h-5 shrink-0 mt-0.5" />
               <div>
@@ -654,18 +773,18 @@ export default function PassportClient({ initialActivities, initialProjects, stu
               </div>
             </div>
 
-            {/* Evidence fields - only display/make required if NOT self-declared */}
+            {/* Evidence File Upload */}
             {routeInfo.route !== 'Self-Declared — No Verification Queue' ? (
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
                 <h3 className="font-bold text-xs uppercase text-slate-700 tracking-wider">Upload / Link Evidence</h3>
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Upload File (PDF / Image)</label>
+                    <label className="block text-xs font-bold text-slate-500 mb-1">Upload File (PDF / Image &bull; Max 5MB)</label>
                     <input
                       type="file"
-                      accept=".pdf,.png,.jpg,.jpeg"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp"
                       onChange={(e) => handleFileChange(e, 'activity')}
-                      className="border border-slate-350 rounded-lg w-full px-3 py-1 text-xs text-slate-950 bg-white focus:outline-none cursor-pointer"
+                      className="border border-slate-350 rounded-lg w-full px-3 py-1 text-xs text-slate-950 bg-white cursor-pointer"
                     />
                     {uploadingAct && <span className="text-[10px] text-indigo-900 font-bold block mt-1 animate-pulse">Uploading file...</span>}
                     {uploadedActName && (
@@ -681,48 +800,47 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                       onChange={(e) => setActEvidenceType(e.target.value)}
                       className="border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
                     >
-                      <option value="PDF">PDF Document</option>
+                      <option value="PDF">PDF Certificate</option>
                       <option value="Image">Image File</option>
-                      <option value="Document">Word Doc / Sheet</option>
-                      <option value="URL">Verification Website Link</option>
+                      <option value="Document">Word Document</option>
+                      <option value="URL">Verification Link</option>
                     </select>
                   </div>
                 </div>
               </div>
             ) : (
-              <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 text-xs text-slate-600 flex items-center space-x-2">
+              <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 text-xs text-slate-655 flex items-center space-x-2">
                 <CheckCircle2 className="w-4 h-4 text-slate-500" />
-                <span>No mandatory proof required. This record will remain <strong>Self-Declared / Unverified</strong>.</span>
+                <span>No proof required. This self-declared entry will directly be added to your ledger.</span>
               </div>
             )}
 
-            {/* Buttons */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setActiveTab('view')}
-                className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={actLoading}
-                className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center"
+                className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
               >
-                {actLoading ? 'Submitting...' : 'Save Activity'}
+                {actLoading ? 'Saving...' : 'Save Activity'}
               </button>
             </div>
           </form>
         </div>
       )}
 
-      {/* Tab Content 3: RECORD PROJECT CONTRIBUTION */}
+      {/* Tab 3: ADD PROJECT */}
       {activeTab === 'add-project' && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
           <div className="p-6 border-b border-slate-100 bg-slate-50/50">
             <h2 className="text-lg font-bold text-slate-900">Record a Team/Personal Project</h2>
-            <p className="text-xs text-slate-500 mt-1">Differentiate the project itself from your specific contributions and tech stack.</p>
+            <p className="text-xs text-slate-500 mt-1">Specify overall metadata and details of your specific contribution.</p>
           </div>
 
           <form onSubmit={handleAddProject} className="p-6 space-y-6">
@@ -732,7 +850,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
               </div>
             )}
 
-            {/* Project Context */}
+            {/* Project Metadata */}
             <div className="space-y-4">
               <h3 className="font-bold text-xs uppercase text-indigo-900 tracking-wider flex items-center">
                 <Layers className="w-4 h-4 mr-1.5" /> Project Metadata
@@ -745,8 +863,8 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                     required
                     value={projName}
                     onChange={(e) => setProjName(e.target.value)}
-                    placeholder="e.g. Smart Campus Platform, Decentralised Booking Portal"
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                    placeholder="e.g. Smart Campus Booking Portal"
+                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                   />
                 </div>
                 <div className="md:col-span-2">
@@ -756,8 +874,8 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                     rows={2}
                     value={projDesc}
                     onChange={(e) => setProjDesc(e.target.value)}
-                    placeholder="Describe what the overall system accomplishes..."
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
+                    placeholder="Describe what the overall project accomplishes..."
+                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                   />
                 </div>
                 <div>
@@ -791,12 +909,12 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Demo URL (optional)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Hosting/Demo URL (optional &bull; Hosting is not a prerequisite)</label>
                   <input
                     type="url"
                     value={projDemoUrl}
                     onChange={(e) => setProjDemoUrl(e.target.value)}
-                    placeholder="https://smartcampus.demo..."
+                    placeholder="https://..."
                     className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                   />
                 </div>
@@ -817,7 +935,7 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                       required
                       value={projRole}
                       onChange={(e) => setProjRole(e.target.value)}
-                      placeholder="e.g. Backend Developer, Team Lead"
+                      placeholder="e.g. Backend Dev, Database Lead"
                       className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                     />
                   </div>
@@ -840,17 +958,17 @@ export default function PassportClient({ initialActivities, initialProjects, stu
                     rows={3}
                     value={projCont}
                     onChange={(e) => setProjCont(e.target.value)}
-                    placeholder="Describe exactly what code/architecture you built (e.g. Designed REST APIs, created PostgreSQL schema, implemented oauth flow)..."
+                    placeholder="Describe exactly what code/modules you built (designed APIs, schema migration)..."
                     className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
                   />
                 </div>
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Upload Project Evidence File (optional)</label>
+                  <label className="block text-xs font-bold text-slate-700 mb-1">Upload Project Documentation/Screenshot (optional &bull; Max 5MB)</label>
                   <input
                     type="file"
-                    accept=".pdf,.png,.jpg,.jpeg"
+                    accept=".pdf,.png,.jpg,.jpeg,.webp"
                     onChange={(e) => handleFileChange(e, 'project')}
-                    className="border border-slate-350 rounded-lg w-full px-3 py-1 text-xs text-slate-950 bg-white focus:outline-none cursor-pointer"
+                    className="border border-slate-350 rounded-lg w-full px-3 py-1 text-xs text-slate-950 bg-white cursor-pointer"
                   />
                   {uploadingProj && <span className="text-[10px] text-indigo-900 font-bold block mt-1 animate-pulse">Uploading file...</span>}
                   {uploadedProjName && (
@@ -873,21 +991,20 @@ export default function PassportClient({ initialActivities, initialProjects, stu
               </div>
             </div>
 
-            {/* Buttons */}
             <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
               <button
                 type="button"
                 onClick={() => setActiveTab('view')}
-                className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 transition-colors"
+                className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50"
               >
                 Cancel
               </button>
               <button
                 type="submit"
                 disabled={projLoading}
-                className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm transition-colors flex items-center"
+                className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
               >
-                {projLoading ? 'Submitting...' : 'Save Project Contribution'}
+                {projLoading ? 'Saving...' : 'Save Project Contribution'}
               </button>
             </div>
           </form>

@@ -14,20 +14,31 @@ model User {
   email        String        @unique
   passwordHash String
   name         String
-  role         String        // STUDENT, FACULTY, COORDINATOR, ADMIN
+  role         String        // STUDENT, FACULTY, COORDINATOR, ADMIN, PRINCIPAL
   createdAt    DateTime      @default(now())
   updatedAt    DateTime      @updatedAt
   student      Student?
   faculty      Faculty?
   coordinator  Coordinator?
+  principal    Principal?
+}
+
+model Institution {
+  id        String       @id @default(uuid())
+  name      String       @unique
+  code      String       @unique
+  departments Department[]
+  students  Student[]
 }
 
 model Department {
-  id       String    @id @default(uuid())
-  name     String    @unique
-  code     String    @unique
-  programs Program[]
-  students Student[]
+  id            String      @id @default(uuid())
+  name          String      @unique
+  code          String      @unique
+  institutionId String
+  institution   Institution @relation(fields: [institutionId], references: [id])
+  programs      Program[]
+  students      Student[]
 }
 
 model Program {
@@ -44,6 +55,8 @@ model Student {
   userId            String                @unique
   user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
   rollNumber        String                @unique
+  institutionId     String
+  institution       Institution           @relation(fields: [institutionId], references: [id])
   departmentId      String
   department        Department            @relation(fields: [departmentId], references: [id])
   programId         String
@@ -54,8 +67,13 @@ model Student {
   sgpa              Float
   attendance        Float
   profileCompletion Int                   @default(80)
+  profileSummary    String?
+  interests         String?
   activities        Activity[]
   contributions     ProjectContribution[]
+  academicRecords   AcademicRecord[]
+  profileLinks      ProfileLink[]
+  studentSkills     StudentSkill[]
 }
 
 model Faculty {
@@ -73,13 +91,47 @@ model Coordinator {
   user            User              @relation(fields: [userId], references: [id], onDelete: Cascade)
   scope         String            // E.g., "ACM Club", "MumbaiHacks"
   activities    Activity[]        @relation("CoordinatorReviewer")
+  events        Event[]
+  sigs          SIG[]
+}
+
+model Principal {
+  id      String @id @default(uuid())
+  userId  String @unique
+  user    User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model AcademicRecord {
+  id         String   @id @default(uuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  semester   Int
+  sgpa       Float
+  cgpa       Float
+  attendance Float
+  examStatus String   @default("PASS") // PASS, FAIL, PENDING
+  createdAt  DateTime @default(now())
+}
+
+model ActivityCategory {
+  id                     String     @id @default(uuid())
+  name                   String     @unique // e.g. Hackathon, Workshop, YouTube Learning
+  requiresEvidence       Boolean    @default(true)
+  evidenceClass          String     // E.g., CERTIFICATE, SCREENSHOT, NONE
+  verificationType       String     // E.g., EVENT_COORDINATOR, FACULTY_TG, ADMIN_INSTITUTIONAL, SELF_DECLARED
+  verificationRequired   Boolean    @default(true)
+  allowedSelfDeclaration Boolean    @default(true)
+  verificationAuthority  String     // E.g., HOD, FACULTY, COORDINATOR, NONE
+  activities             Activity[]
 }
 
 model Activity {
   id                    String            @id @default(uuid())
   studentId             String
   student               Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  type                  String            // Workshop, Seminar, Hackathon, YouTube Learning, etc.
+  categoryId            String?
+  category              ActivityCategory? @relation(fields: [categoryId], references: [id])
+  type                  String            // Workshop, Seminar, Hackathon, YouTube Learning, etc. (kept for UI mapping)
   title                 String
   date                  DateTime
   organiser             String
@@ -97,6 +149,7 @@ model Activity {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
   logs                  VerificationLog[]
+  evidenceList          Evidence[]
   
   // Relations back to Faculty and Coordinator
   facultyReviewerId     String?
@@ -105,12 +158,29 @@ model Activity {
   coordinatorReviewer   Coordinator?      @relation("CoordinatorReviewer", fields: [coordinatorReviewerId], references: [id])
 }
 
+model Project {
+  id            String                @id @default(uuid())
+  name          String                @unique
+  description   String
+  type          String                // TEAM, PERSONAL
+  startDate     DateTime
+  endDate       DateTime
+  repoUrl       String?
+  demoUrl       String?
+  hostingUrl    String?
+  technologies  String                // Comma-separated list: "Next.js, Tailwind, Prisma"
+  contributions ProjectContribution[]
+  createdAt     DateTime              @default(now())
+}
+
 model ProjectContribution {
   id                    String            @id @default(uuid())
   studentId             String
   student               Student           @relation(fields: [studentId], references: [id], onDelete: Cascade)
-  projectName           String
-  projectDesc           String
+  projectId             String
+  project               Project           @relation(fields: [projectId], references: [id], onDelete: Cascade)
+  projectName           String            // Kept for direct fast query and UI migration compatibility
+  projectDesc           String            // Kept for direct fast query and UI migration compatibility
   startDate             DateTime
   endDate               DateTime
   repoUrl               String?
@@ -127,10 +197,25 @@ model ProjectContribution {
   createdAt             DateTime          @default(now())
   updatedAt             DateTime          @updatedAt
   logs                  VerificationLog[]
+  evidenceList          Evidence[]
 
   // Relations back to Faculty
   facultyReviewerId     String?
   facultyReviewer       Faculty?          @relation("FacultyContributionReviewer", fields: [facultyReviewerId], references: [id])
+}
+
+model Evidence {
+  id             String               @id @default(uuid())
+  activityId     String?
+  activity       Activity?            @relation(fields: [activityId], references: [id], onDelete: Cascade)
+  contributionId String?
+  contribution   ProjectContribution? @relation(fields: [contributionId], references: [id], onDelete: Cascade)
+  fileName       String
+  fileType       String
+  fileSize       Int
+  storagePath    String
+  uploadedBy     String
+  uploadedAt     DateTime             @default(now())
 }
 
 model VerificationLog {
@@ -146,4 +231,61 @@ model VerificationLog {
   newStatus      String
   comment        String?
   createdAt      DateTime             @default(now())
+}
+
+model Skill {
+  id            String         @id @default(uuid())
+  name          String         @unique
+  category      String         // Frontend, Backend, Database, Cloud, Mobile, Devops, SoftSkills
+  studentSkills StudentSkill[]
+}
+
+model StudentSkill {
+  id         String   @id @default(uuid())
+  studentId  String
+  student    Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  skillId    String
+  skill      Skill    @relation(fields: [skillId], references: [id], onDelete: Cascade)
+  level      String   // Beginner, Intermediate, Expert
+  status     String   @default("SELF_DECLARED") // SELF_DECLARED, VERIFIED
+  verifiedBy String?
+  createdAt  DateTime @default(now())
+}
+
+model Event {
+  id            String       @id @default(uuid())
+  name          String       @unique
+  description   String
+  date          DateTime
+  coordinatorId String?
+  coordinator   Coordinator? @relation(fields: [coordinatorId], references: [id])
+}
+
+model SIG {
+  id            String       @id @default(uuid())
+  name          String       @unique
+  description   String
+  coordinatorId String?
+  coordinator   Coordinator? @relation(fields: [coordinatorId], references: [id])
+}
+
+model ProfileLink {
+  id           String   @id @default(uuid())
+  studentId    String
+  student      Student  @relation(fields: [studentId], references: [id], onDelete: Cascade)
+  platformName String   // LinkedIn, GitHub, LeetCode, etc.
+  profileUrl   String
+  displayOrder Int      @default(0)
+  isPublic     Boolean  @default(true)
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+}
+
+model AuditLog {
+  id        String   @id @default(uuid())
+  userId    String
+  action    String
+  details   String
+  ipAddress String?
+  createdAt DateTime @default(now())
 }

@@ -18,6 +18,11 @@ export async function POST(
       return NextResponse.json({ error: 'Invalid action' }, { status: 400 });
     }
 
+    // Require comment for Return or Reject decisions
+    if (['RETURN', 'REJECT'].includes(action) && (!comment || !comment.trim())) {
+      return NextResponse.json({ error: 'A comment is required when returning or rejecting a project.' }, { status: 400 });
+    }
+
     const { id } = await params;
 
     const contribution = await prisma.projectContribution.findUnique({
@@ -60,6 +65,15 @@ export async function POST(
         previousStatus: contribution.status,
         newStatus: newStatus,
         comment: comment || null,
+      },
+    });
+
+    // Log in HOD Audit Log
+    await prisma.auditLog.create({
+      data: {
+        userId: session.userId,
+        action: `PROJECT_${action}`,
+        details: `Reviewed project contribution ${id} for student ${contribution.studentId}. Status changed from ${contribution.status} to ${newStatus}.`,
       },
     });
 

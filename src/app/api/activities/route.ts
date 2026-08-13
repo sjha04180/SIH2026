@@ -27,29 +27,46 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Deterministic Routing Classification Logic
+    // 1. Fetch dynamic ActivityCategory rules from the database
+    const category = await prisma.activityCategory.findFirst({
+      where: { name: type },
+    });
+
     let verificationRoute = 'SELF_DECLARED';
     let status = 'SELF_DECLARED';
 
-    const eventTypes = ['Hackathon', 'Competition', 'Workshop', 'Seminar', 'Club/SIG Participation'];
-    const facultyTypes = ['Project', 'Research', 'Internship', 'Award', 'Certification'];
-
-    if (eventTypes.includes(type)) {
-      verificationRoute = 'EVENT_COORDINATOR';
-      status = 'SUBMITTED';
-    } else if (facultyTypes.includes(type)) {
-      verificationRoute = 'FACULTY_TG';
-      status = 'SUBMITTED';
+    if (category) {
+      verificationRoute = category.verificationType;
+      status = category.verificationRequired ? 'SUBMITTED' : 'SELF_DECLARED';
+      
+      // Enforce evidence rule if required by category configuration
+      if (category.requiresEvidence && status !== 'SELF_DECLARED' && !evidenceUrl) {
+        return NextResponse.json({ 
+          error: `Evidence is required for category "${type}". Please upload proof (PDF/Image) to submit.` 
+        }, { status: 400 });
+      }
     } else {
-      // YouTube Learning, Self study, Personal practice, Unhosted personal project
-      verificationRoute = 'SELF_DECLARED';
-      status = 'SELF_DECLARED';
+      // Fallback classification if category not found in DB
+      const eventTypes = ['Hackathon', 'Competition', 'Workshop', 'Seminar', 'Club/SIG Participation'];
+      const facultyTypes = ['Project', 'Research', 'Internship', 'Award', 'Certification'];
+
+      if (eventTypes.includes(type)) {
+        verificationRoute = 'EVENT_COORDINATOR';
+        status = 'SUBMITTED';
+      } else if (facultyTypes.includes(type)) {
+        verificationRoute = 'FACULTY_TG';
+        status = 'SUBMITTED';
+      } else {
+        verificationRoute = 'SELF_DECLARED';
+        status = 'SELF_DECLARED';
+      }
     }
 
-    // Create the activity in the database
+    // 2. Create the activity in the database
     const activity = await prisma.activity.create({
       data: {
         studentId: session.profileId,
+        categoryId: category?.id || null,
         type,
         title,
         date: new Date(date),
@@ -65,7 +82,7 @@ export async function POST(request: Request) {
       },
     });
 
-    // Create initial log
+    // 3. Create initial log
     await prisma.verificationLog.create({
       data: {
         activityId: activity.id,
@@ -92,11 +109,12 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    // If student, return only their activities.
-    // If admin or HOD, they will retrieve specific student details via another endpoint, but we can support listing.
     const activities = await prisma.activity.findMany({
       where: {
         studentId: session.role === 'STUDENT' ? session.profileId : undefined,
+      },
+      include: {
+        category: true,
       },
       orderBy: { date: 'desc' },
     });

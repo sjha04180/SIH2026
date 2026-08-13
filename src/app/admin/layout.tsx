@@ -2,7 +2,7 @@
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
 import Link from 'next/link';
-import { LayoutDashboard, Award, LogOut } from 'lucide-react';
+import { LayoutDashboard, Award, LogOut, UserPlus, Settings2 } from 'lucide-react';
 import React from 'react';
 
 interface LayoutProps {
@@ -18,6 +18,8 @@ export default async function AdminLayout({ children }: LayoutProps) {
 
   const navItems = [
     { name: 'HOD Dashboard', href: '/admin/dashboard', icon: LayoutDashboard },
+    { name: 'Student Registry', href: '/admin/registry', icon: UserPlus },
+    { name: 'Verification Rules', href: '/admin/config', icon: Settings2 },
   ];
 
   return (

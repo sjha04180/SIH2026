@@ -1,36 +1,96 @@
-This is a [Next.js](https://nextjs.org) project bootstrapped with [`create-next-app`](https://nextjs.org/docs/app/api-reference/cli/create-next-app).
+# Student Development Passport Portal (SIH25093 MVP)
 
-## Getting Started
+A centralized, evidence-aware, and appropriately verified Student Development Passport system for Higher Educational Institutions. Built for the SIH 2026 Internal Hackathon.
 
-First, run the development server:
-
-```bash
-npm run dev
-# or
-yarn dev
-# or
-pnpm dev
-# or
-bun dev
+## Project Scope
+This MVP focuses on the core student record lifecycle:
+```
+Capture → Evidence/Self-Declaration → Routing Classification → Appropriate Review Verification → Digital Passport Ledger → Summary PDF Reports
 ```
 
-Open [http://localhost:3000](http://localhost:3000) with your browser to see the result.
+### Core Features
+- **Student Dashboard & Profile:** View overall statistics, declare technical skills catalog and manage external professional profile URLs (LinkedIn, GitHub, ORCID, etc.).
+- **Self-Directed Learning:** Declare low-risk activities (e.g. YouTube learning, self-study) instantly to the Passport as `Self-Declared / Unverified` without clogging faculty queues.
+- **Evidence Verification Routing Engine:** Co-curricular activities are routed to the Event/SIG Coordinator, projects/academic achievements are routed to Faculty/Teacher Guardian, and administrative transcripts are locked and populated by HOD.
+- **Project Contribution Breakdown:** Record team projects once and log separate developer roles (e.g., Student A: Frontend, Student B: Backend) to prevent assigning all technologies to all members.
+- **Institutional Authority Views:** Fully functional dashboards for assigned Faculty (assigned student list & verification queue), Event Coordinator (SIG/club participation queue), HOD/Admin (student creation registry & rules configuration), and restricted read-only overview for the Principal.
+- **Print-Ready Reports:** Student reports and analytics summaries optimized using CSS print-ledger stylesheets (`@media print`) for clean margins, pagination, and official double signatures.
 
-You can start editing the page by modifying `app/page.tsx`. The page auto-updates as you edit the file.
+---
 
-This project uses [`next/font`](https://nextjs.org/docs/app/building-your-application/optimizing/fonts) to automatically optimize and load [Geist](https://vercel.com/font), a new font family for Vercel.
+## Technical Stack
+- **Frontend Framework:** Next.js (App Router, React 19, TypeScript)
+- **Styling system:** Tailwind CSS v4, Lucide Icons
+- **Database Engine:** SQLite (local development `dev.db`), Prisma ORM
+- **Authentication:** Base64 session cookies with full RBAC auth logic in layouts and API routes
 
-## Learn More
+---
 
-To learn more about Next.js, take a look at the following resources:
+## Installation & Setup
 
-- [Next.js Documentation](https://nextjs.org/docs) - learn about Next.js features and API.
-- [Learn Next.js](https://nextjs.org/learn) - an interactive Next.js tutorial.
+1. **Install Dependencies:**
+   ```bash
+   npm install
+   ```
 
-You can check out [the Next.js GitHub repository](https://github.com/vercel/next.js) - your feedback and contributions are welcome!
+2. **Initialize Environment Variables:**
+   Create a `.env` file in the root directory:
+   ```env
+   DATABASE_URL="file:./dev.db"
+   NODE_ENV="development"
+   ```
 
-## Deploy on Vercel
+3. **Initialize SQLite Database Schema:**
+   Apply Prisma models:
+   ```bash
+   npx prisma db push
+   ```
 
-The easiest way to deploy your Next.js app is to use the [Vercel Platform](https://vercel.com/new?utm_medium=default-template&filter=next.js&utm_source=create-next-app&utm_campaign=create-next-app-readme) from the creators of Next.js.
+4. **Seed Database:**
+   Populate all demo profiles, departments, activity routing rules, skills catalog, and mock timelines:
+   ```bash
+   npx prisma db seed
+   ```
 
-Check out our [Next.js deployment documentation](https://nextjs.org/docs/app/building-your-application/deploying) for more details.
+5. **Start Development Server:**
+   ```bash
+   npm run dev
+   ```
+   Open [http://localhost:3000](http://localhost:3000) to access the application sandbox.
+
+---
+
+## Hackathon Demo Sandbox Credentials
+
+The landing page features a **Quick Sandbox Access** panel. You can authenticate as any user by clicking their sandbox card, or type in these credentials:
+
+| Institutional Role | Email Address | Password | Sandbox Mock Scenario Details |
+| :--- | :--- | :--- | :--- |
+| **Student (Sachin Jha)** | `sachin@sih.edu` | `sachin123` | Has profile summary, links (LinkedIn/ORCID), React self-study, verified hackathon, and pending backend contribution in "Smart Campus Platform". |
+| **Student (Hritik Jha)** | `hritik@sih.edu` | `hritik123` | Member of "Smart Campus" team. Has verified Next.js workshop and verified frontend contribution. |
+| **Faculty (Dr. Alok Ranjan)** | `alok@sih.edu` | `faculty123` | Teacher Guardian. Reviews project contributions and internships. |
+| **Event Coordinator (Prof. Neha Sharma)** | `neha@sih.edu` | `coord123` | ACM Head. Reviews SIG chapter workshops, hackathons, and competitions. |
+| **Admin / HOD (Dr. Rajesh Patil)** | `hod.cse@sih.edu` | `admin123` | CSE HOD. Creates students, configs category rules, reviews department stats. |
+| **Principal (Dr. Shruti Sharma)** | `principal@sih.edu` | `principal123` | Executive restricted authority. Views institution charts and audits profiles. |
+
+---
+
+## Project Structure
+```
+/prisma
+  ├── schema.prisma        # SQLite mapping of all 18 specified models
+  └── seed.ts              # Seeding scenario configuration
+/src
+  ├── lib
+  │    ├── auth.ts         # Base64 session middleware helper
+  │    └── db.ts           # Prisma client instantiation
+  └── app
+       ├── page.tsx        # Portal landing & sandbox login selector
+       ├── layout.tsx      # Global app layout
+       ├── api/            # API Route handlers for auth, upload, and student data
+       ├── admin/          # Admin registry, config rules, and dashboard
+       ├── coordinator/    # Coordinator event participant queue
+       ├── faculty/        # Faculty tg assigned cohort and review queue
+       ├── principal/      # Restricted principal read-only views
+       └── student/        # Student dashboard, passport, profile, and reports
+```

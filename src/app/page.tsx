@@ -49,6 +49,8 @@ export default function LoginPage() {
         router.push('/coordinator/dashboard');
       } else if (role === 'ADMIN') {
         router.push('/admin/dashboard');
+      } else if (role === 'PRINCIPAL') {
+        router.push('/principal');
       }
     } catch (err: any) {
       setError(err.message || 'Something went wrong. Please try again.');
@@ -84,6 +86,13 @@ export default function LoginPage() {
       email: 'hod.cse@sih.edu',
       password: 'admin123',
       desc: 'View department-wide statistics, program analytics, and search student passports.',
+    },
+    {
+      name: 'Dr. Shruti Sharma',
+      role: 'PRINCIPAL',
+      email: 'principal@sih.edu',
+      password: 'principal123',
+      desc: 'Institutional restricted read-only executive overview and audit search portal.',
     },
   ];
 

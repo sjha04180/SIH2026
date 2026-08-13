@@ -1,34 +1,23 @@
-// src/app/faculty/layout.tsx
+// src/app/principal/layout.tsx
 import { redirect } from 'next/navigation';
 import { getSession } from '@/lib/auth';
-import { prisma } from '@/lib/db';
 import Link from 'next/link';
-import { LayoutDashboard, Award, LogOut, Users } from 'lucide-react';
+import { LayoutDashboard, Award, LogOut } from 'lucide-react';
 import React from 'react';
 
 interface LayoutProps {
   children: React.ReactNode;
 }
 
-export default async function FacultyLayout({ children }: LayoutProps) {
+export default async function PrincipalLayout({ children }: LayoutProps) {
   const session = await getSession();
 
-  if (!session || session.role !== 'FACULTY') {
-    redirect('/');
-  }
-
-  // Fetch faculty profile details
-  const faculty = await prisma.faculty.findUnique({
-    where: { id: session.profileId },
-  });
-
-  if (!faculty) {
+  if (!session || session.role !== 'PRINCIPAL') {
     redirect('/');
   }
 
   const navItems = [
-    { name: 'Verification Queue', href: '/faculty/dashboard', icon: LayoutDashboard },
-    { name: 'My Students', href: '/faculty/students', icon: Users },
+    { name: 'Principal Dashboard', href: '/principal', icon: LayoutDashboard },
   ];
 
   return (
@@ -43,17 +32,14 @@ export default async function FacultyLayout({ children }: LayoutProps) {
             </div>
             <div>
               <span className="font-bold text-sm leading-tight block">Digital Passport</span>
-              <span className="text-xs text-indigo-300">Faculty/TG Portal</span>
+              <span className="text-xs text-indigo-300">Principal Portal</span>
             </div>
           </div>
 
           {/* User Card */}
           <div className="p-5 border-b border-indigo-900 bg-indigo-950/50">
             <h4 className="font-bold text-sm text-white truncate">{session.name}</h4>
-            <p className="text-xs text-indigo-300 uppercase font-semibold tracking-wider mt-0.5">Faculty / Teacher Guardian</p>
-            <p className="text-[11px] text-indigo-400 mt-2 line-clamp-1">
-              Dept: {faculty.department}
-            </p>
+            <p className="text-xs text-indigo-300 uppercase font-semibold tracking-wider mt-0.5">Principal / Executive Authority</p>
           </div>
 
           {/* Navigation Links */}
@@ -94,11 +80,11 @@ export default async function FacultyLayout({ children }: LayoutProps) {
         <header className="bg-indigo-950 text-white p-4 flex items-center justify-between md:hidden border-b border-indigo-900">
           <div className="flex items-center space-x-2">
             <Award className="w-5 h-5" />
-            <span className="font-bold text-sm">Faculty Portal</span>
+            <span className="font-bold text-sm">Principal Portal</span>
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-xs font-semibold bg-indigo-900 px-2.5 py-1 rounded-full uppercase tracking-wider text-indigo-200">
-              Faculty
+              Principal
             </span>
             <form action="/api/auth/logout" method="POST">
               <button type="submit" className="text-indigo-300 hover:text-white">

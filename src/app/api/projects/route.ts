@@ -27,13 +27,31 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Missing required fields' }, { status: 400 });
     }
 
-    // Project contributions are automatically routed to Faculty/TG for verification
-    const verificationRoute = 'FACULTY_TG';
-    const status = 'SUBMITTED';
+    // 1. Find or Create the base shared Project entry
+    let project = await prisma.project.findUnique({
+      where: { name: projectName },
+    });
 
+    if (!project) {
+      project = await prisma.project.create({
+        data: {
+          name: projectName,
+          description: projectDesc,
+          type: 'TEAM', // Default to TEAM project for mapping scenario
+          startDate: new Date(startDate),
+          endDate: new Date(endDate),
+          repoUrl: repoUrl || null,
+          demoUrl: demoUrl || null,
+          technologies,
+        },
+      });
+    }
+
+    // 2. Create the specific student contribution
     const projectContribution = await prisma.projectContribution.create({
       data: {
         studentId: session.profileId,
+        projectId: project.id,
         projectName,
         projectDesc,
         startDate: new Date(startDate),
@@ -43,13 +61,13 @@ export async function POST(request: Request) {
         projectEvidence: projectEvidence || null,
         role,
         contribution,
-        technologies, // Store as comma-separated string, e.g. "React, Node.js, Express"
-        verificationRoute,
-        status,
+        technologies, // Store stack, e.g. "React, Node.js"
+        verificationRoute: 'FACULTY_TG',
+        status: 'SUBMITTED',
       },
     });
 
-    // Create verification log
+    // 3. Create verification log
     await prisma.verificationLog.create({
       data: {
         contributionId: projectContribution.id,
@@ -57,7 +75,7 @@ export async function POST(request: Request) {
         actorName: session.name,
         action: 'SUBMIT',
         previousStatus: 'DRAFT',
-        newStatus: status,
+        newStatus: 'SUBMITTED',
         comment: 'Project contribution submitted for Faculty/TG verification.',
       },
     });
@@ -79,6 +97,9 @@ export async function GET() {
     const contributions = await prisma.projectContribution.findMany({
       where: {
         studentId: session.role === 'STUDENT' ? session.profileId : undefined,
+      },
+      include: {
+        project: true,
       },
       orderBy: { startDate: 'desc' },
     });

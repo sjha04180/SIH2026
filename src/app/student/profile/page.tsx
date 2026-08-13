@@ -1,16 +1,15 @@
-// src/app/student/reports/page.tsx
+// src/app/student/profile/page.tsx
 import { getSession } from '@/lib/auth';
 import { prisma } from '@/lib/db';
 import { redirect } from 'next/navigation';
-import ReportClient from './ReportClient';
+import ProfileClient from './ProfileClient';
 
-export default async function StudentReportPage() {
+export default async function StudentProfilePage() {
   const session = await getSession();
   if (!session || session.role !== 'STUDENT') {
     redirect('/');
   }
 
-  // Fetch student profile, activities, contributions, links, and skills
   const student = await prisma.student.findUnique({
     where: { id: session.profileId },
     include: {
@@ -18,16 +17,6 @@ export default async function StudentReportPage() {
       department: true,
       profileLinks: {
         orderBy: { displayOrder: 'asc' },
-      },
-      studentSkills: {
-        include: { skill: true },
-        orderBy: { createdAt: 'desc' },
-      },
-      activities: {
-        orderBy: { date: 'desc' },
-      },
-      contributions: {
-        orderBy: { startDate: 'desc' },
       },
     },
   });
@@ -40,9 +29,10 @@ export default async function StudentReportPage() {
   const serializedStudent = JSON.parse(JSON.stringify(student));
 
   return (
-    <ReportClient 
-      student={serializedStudent} 
-      sessionName={session.name} 
+    <ProfileClient
+      student={serializedStudent}
+      sessionName={session.name}
+      sessionEmail={session.email}
     />
   );
 }

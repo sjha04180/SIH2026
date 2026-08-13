@@ -1,4 +1,4 @@
-// src/app/admin/dashboard/AdminDashboardClient.tsx
+// src/app/principal/PrincipalClient.tsx
 'use client';
 
 import { useState } from 'react';
@@ -16,8 +16,7 @@ import {
   X,
   ChevronRight,
   Percent,
-  Printer,
-  Tag
+  Building
 } from 'lucide-react';
 
 interface Student {
@@ -35,12 +34,10 @@ interface Student {
     email: string;
   };
   program: {
-    id: string;
     name: string;
     code: string;
   };
   department: {
-    id: string;
     name: string;
     code: string;
   };
@@ -48,90 +45,49 @@ interface Student {
   contributions: any[];
 }
 
-interface AdminDashboardClientProps {
+interface PrincipalClientProps {
   students: Student[];
   allActivities: any[];
   allContributions: any[];
+  principalName: string;
 }
 
-export default function AdminDashboardClient({ 
+export default function PrincipalClient({ 
   students, 
   allActivities, 
-  allContributions 
-}: AdminDashboardClientProps) {
+  allContributions, 
+  principalName 
+}: PrincipalClientProps) {
   const [searchQuery, setSearchQuery] = useState('');
   const [selectedStudent, setSelectedStudent] = useState<Student | null>(null);
 
-  // Filters State
-  const [deptFilter, setDeptFilter] = useState('all');
-  const [progFilter, setProgFilter] = useState('all');
-  const [semFilter, setSemFilter] = useState('all');
-  const [batchFilter, setBatchFilter] = useState('all');
-
-  // Filter lists options extraction
-  const departmentsList = Array.from(new Set(students.map(s => JSON.stringify(s.department)))).map(d => JSON.parse(d));
-  const programsList = Array.from(new Set(students.map(s => JSON.stringify(s.program)))).map(p => JSON.parse(p));
-  const semestersList = Array.from(new Set(students.map(s => s.currentSemester))).sort((a, b) => a - b);
-  const batchesList = Array.from(new Set(students.map(s => s.batch))).sort();
-
-  // Filter students logic
-  const filteredStudents = students.filter(student => {
-    // Search query match
-    const term = searchQuery.toLowerCase();
-    const searchMatch = 
-      student.user.name.toLowerCase().includes(term) ||
-      student.rollNumber.toLowerCase().includes(term);
-
-    // Dropdown filters matches
-    const deptMatch = deptFilter === 'all' || student.department.id === deptFilter;
-    const progMatch = progFilter === 'all' || student.program.id === progFilter;
-    const semMatch = semFilter === 'all' || student.currentSemester.toString() === semFilter;
-    const batchMatch = batchFilter === 'all' || student.batch === batchFilter;
-
-    return searchMatch && deptMatch && progMatch && semMatch && batchMatch;
-  });
-
-  // Calculate Metrics based on filtered students
-  const totalStudents = filteredStudents.length;
-  const filteredActivities = allActivities.filter(act => filteredStudents.some(s => s.id === act.studentId));
-  const filteredContributions = allContributions.filter(cont => filteredStudents.some(s => s.id === cont.studentId));
-  const totalActCount = filteredActivities.length + filteredContributions.length;
+  const totalStudents = students.length;
+  const totalActCount = allActivities.length + allContributions.length;
 
   const verifiedCount = 
-    filteredActivities.filter(a => a.status === 'VERIFIED').length +
-    filteredContributions.filter(c => c.status === 'VERIFIED').length;
+    allActivities.filter(a => a.status === 'VERIFIED').length +
+    allContributions.filter(c => c.status === 'VERIFIED').length;
 
   const pendingCount = 
-    filteredActivities.filter(a => a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW').length +
-    filteredContributions.filter(c => c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW').length;
+    allActivities.filter(a => a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW').length +
+    allContributions.filter(c => c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW').length;
 
   const selfDeclaredCount = 
-    filteredActivities.filter(a => a.status === 'SELF_DECLARED').length +
-    filteredContributions.filter(c => c.status === 'SELF_DECLARED').length;
+    allActivities.filter(a => a.status === 'SELF_DECLARED').length +
+    allContributions.filter(c => c.status === 'SELF_DECLARED').length;
 
-  // Activities by category count calculation
-  const categoryCounts: { [key: string]: number } = {
-    Technical: 0,
-    'Co-curricular': 0,
-    Academic: 0,
-    'Self-learning': 0,
-    Achievements: 0
-  };
-
-  filteredActivities.forEach(act => {
-    if (['Hackathon', 'Project'].includes(act.type)) {
-      categoryCounts['Technical']++;
-    } else if (['Workshop', 'Seminar', 'Competition', 'Club/SIG Participation'].includes(act.type)) {
-      categoryCounts['Co-curricular']++;
-    } else if (['Internship', 'Research', 'Publication'].includes(act.type)) {
-      categoryCounts['Academic']++;
-    } else if (['YouTube Learning', 'Self-study', 'Personal Practice', 'Unhosted Personal Project'].includes(act.type)) {
-      categoryCounts['Self-learning']++;
-    } else if (['Award', 'Certification'].includes(act.type)) {
-      categoryCounts['Achievements']++;
-    }
+  // Search filter
+  const filteredStudents = students.filter(student => {
+    const term = searchQuery.toLowerCase();
+    return (
+      student.user.name.toLowerCase().includes(term) ||
+      student.rollNumber.toLowerCase().includes(term)
+    );
   });
-  categoryCounts['Technical'] += filteredContributions.length;
+
+  // Calculate Department comparisons
+  const cseStudents = students.filter(s => s.department.code === 'CSE');
+  const itStudents = students.filter(s => s.department.code === 'IT');
 
   const getStatusBadge = (status: string) => {
     switch (status) {
@@ -162,33 +118,12 @@ export default function AdminDashboardClient({
     <div className="space-y-8 font-sans">
       
       {/* Header */}
-      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between border-b border-slate-200 pb-4 gap-4 print:hidden">
-        <div>
-          <h1 className="text-2xl font-bold text-slate-900">Institutional HOD Dashboard</h1>
-          <p className="text-slate-500 text-xs mt-1">Campus wide student activities record and verification audit logs.</p>
-        </div>
-
-        <button
-          onClick={() => {
-            if (typeof window !== 'undefined') window.print();
-          }}
-          className="inline-flex items-center px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white rounded-lg text-xs font-bold shadow-sm transition-colors cursor-pointer shrink-0"
-        >
-          <Printer className="w-3.5 h-3.5 mr-1.5" />
-          <span>Print HOD Report</span>
-        </button>
+      <div className="border-b border-slate-200 pb-4">
+        <h1 className="text-2xl font-bold text-slate-900">Principal Executive Portal</h1>
+        <p className="text-slate-500 text-xs mt-1">Restricted administrative audit mode. Read-only institution overview analytics.</p>
       </div>
 
-      {/* Printable Report Header */}
-      <div className="hidden print:block text-center space-y-2 border-b-2 border-slate-900 pb-4 mb-6">
-        <h2 className="text-2xl font-extrabold text-slate-900 uppercase">SIH Institute of Higher Education</h2>
-        <h3 className="text-base font-bold text-indigo-950 uppercase tracking-widest">HOD Institutional Summary Ledger</h3>
-        <p className="text-xs text-slate-400">
-          Generated: {new Date().toLocaleDateString('en-IN')} &bull; Department filters: {deptFilter === 'all' ? 'All' : deptFilter} &bull; Batch: {batchFilter}
-        </p>
-      </div>
-
-      {/* Metric Cards Row */}
+      {/* Metrics Row */}
       <div className="grid grid-cols-2 md:grid-cols-5 gap-4">
         <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
           <div className="flex items-center space-x-2 text-slate-500 mb-1">
@@ -201,7 +136,7 @@ export default function AdminDashboardClient({
         <div className="bg-white border border-slate-200 p-4 rounded-xl shadow-sm">
           <div className="flex items-center space-x-2 text-slate-500 mb-1">
             <Layers className="w-4 h-4 text-indigo-900" />
-            <span className="text-[10px] uppercase font-bold tracking-wider">Total Records</span>
+            <span className="text-[10px] uppercase font-bold tracking-wider">Total Activities</span>
           </div>
           <span className="text-2xl font-extrabold text-slate-900 block">{totalActCount}</span>
         </div>
@@ -231,140 +166,57 @@ export default function AdminDashboardClient({
         </div>
       </div>
 
-      {/* Analytics Charts Row */}
-      <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 print:break-inside-avoid">
-        {/* Verification Status Distribution */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
-            Verification Distribution
-          </h3>
-          <div className="space-y-4">
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span>Verified ({verifiedCount})</span>
-                <span>{totalActCount > 0 ? Math.round((verifiedCount / totalActCount) * 100) : 0}%</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-emerald-500 h-full" style={{ width: `${totalActCount > 0 ? (verifiedCount / totalActCount) * 100 : 0}%` }} />
-              </div>
-            </div>
+      {/* department performance block */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
+        <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
+          Department-wise Participation Analytics
+        </h3>
 
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span>Pending Review ({pendingCount})</span>
-                <span>{totalActCount > 0 ? Math.round((pendingCount / totalActCount) * 100) : 0}%</span>
-              </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-amber-500 h-full" style={{ width: `${totalActCount > 0 ? (pendingCount / totalActCount) * 100 : 0}%` }} />
-              </div>
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-extrabold text-slate-800 text-sm">Computer Science & Engineering</span>
+              <Building className="w-4 h-4 text-indigo-900" />
             </div>
-
-            <div>
-              <div className="flex justify-between text-xs font-semibold mb-1">
-                <span>Self-Declared ({selfDeclaredCount})</span>
-                <span>{totalActCount > 0 ? Math.round((selfDeclaredCount / totalActCount) * 100) : 0}%</span>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span>Enrolled Cohort:</span> <span className="font-bold">{cseStudents.length} Students</span>
               </div>
-              <div className="w-full bg-slate-100 h-2.5 rounded-full overflow-hidden">
-                <div className="bg-blue-500 h-full" style={{ width: `${totalActCount > 0 ? (selfDeclaredCount / totalActCount) * 100 : 0}%` }} />
+              <div className="flex justify-between">
+                <span>Passports Average CGPA:</span> <span className="font-bold">{(cseStudents.reduce((acc, s) => acc + s.cgpa, 0) / (cseStudents.length || 1)).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Departmental Records Ledger:</span> <span className="font-bold">{cseStudents.reduce((acc, s) => acc + s.activities.length + s.contributions.length, 0)} entries</span>
               </div>
             </div>
           </div>
-        </div>
 
-        {/* Activities by Category */}
-        <div className="bg-white border border-slate-200 rounded-2xl p-6 shadow-sm">
-          <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider mb-4 border-b border-slate-100 pb-2">
-            Activities by Category
-          </h3>
-          <div className="space-y-3">
-            {Object.keys(categoryCounts).map(cat => {
-              const count = categoryCounts[cat];
-              const percent = totalActCount > 0 ? Math.round((count / totalActCount) * 100) : 0;
-              return (
-                <div key={cat} className="flex items-center justify-between text-xs">
-                  <span className="font-semibold text-slate-600">{cat}</span>
-                  <div className="flex items-center space-x-3 w-2/3 justify-end">
-                    <div className="w-24 bg-slate-100 h-2 rounded-full overflow-hidden hidden sm:block shrink-0">
-                      <div className="bg-indigo-900 h-full" style={{ width: `${percent}%` }} />
-                    </div>
-                    <span className="font-bold text-slate-900 w-16 text-right">{count} items</span>
-                  </div>
-                </div>
-              );
-            })}
+          <div className="bg-slate-50/50 border border-slate-200 p-4 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <span className="font-extrabold text-slate-800 text-sm">Information Technology</span>
+              <Building className="w-4 h-4 text-indigo-900" />
+            </div>
+            <div className="space-y-2 text-xs">
+              <div className="flex justify-between">
+                <span>Enrolled Cohort:</span> <span className="font-bold">{itStudents.length} Students</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Passports Average CGPA:</span> <span className="font-bold">{(itStudents.reduce((acc, s) => acc + s.cgpa, 0) / (itStudents.length || 1)).toFixed(2)}</span>
+              </div>
+              <div className="flex justify-between">
+                <span>Departmental Records Ledger:</span> <span className="font-bold">{itStudents.reduce((acc, s) => acc + s.activities.length + s.contributions.length, 0)} entries</span>
+              </div>
+            </div>
           </div>
         </div>
       </div>
 
-      {/* Filters Selection Bar (Hidden in Print) */}
-      <div className="bg-white border border-slate-200 rounded-xl p-4 shadow-sm space-y-4 print:hidden">
-        <span className="text-xs font-bold text-slate-500 uppercase tracking-wider block">Institutional filters</span>
-        <div className="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-4 gap-4">
+      {/* Read-Only Passport search registry */}
+      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
+        <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50">
           <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Department</label>
-            <select
-              value={deptFilter}
-              onChange={(e) => setDeptFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
-            >
-              <option value="all">All Departments</option>
-              {departmentsList.map(d => (
-                <option key={d.id} value={d.id}>{d.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Program</label>
-            <select
-              value={progFilter}
-              onChange={(e) => setProgFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-900 focus:outline-none"
-            >
-              <option value="all">All Programs</option>
-              {programsList.map(p => (
-                <option key={p.id} value={p.id}>{p.name}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Semester</label>
-            <select
-              value={semFilter}
-              onChange={(e) => setSemFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-900 focus:outline-none font-semibold"
-            >
-              <option value="all">All Semesters</option>
-              {semestersList.map(s => (
-                <option key={s} value={s.toString()}>Semester {s}</option>
-              ))}
-            </select>
-          </div>
-
-          <div>
-            <label className="block text-[10px] uppercase font-bold text-slate-500 mb-1.5">Batch</label>
-            <select
-              value={batchFilter}
-              onChange={(e) => setBatchFilter(e.target.value)}
-              className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-900 focus:outline-none font-semibold"
-            >
-              <option value="all">All Batches</option>
-              {batchesList.map(b => (
-                <option key={b} value={b}>{b}</option>
-              ))}
-            </select>
-          </div>
-        </div>
-      </div>
-
-      {/* Student Registry Table */}
-      <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden print:border-none print:shadow-none">
-        {/* Header with Search */}
-        <div className="p-6 border-b border-slate-200 flex flex-col sm:flex-row sm:items-center justify-between gap-4 bg-slate-50/50 print:hidden">
-          <div>
-            <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider">Student Registry</h3>
-            <p className="text-xs text-slate-500">Search and audit individual Student passports.</p>
+            <h3 className="font-bold text-slate-900 text-sm uppercase tracking-wider">Institution Directory Search</h3>
+            <p className="text-xs text-slate-500">Search and audit any student passport record institution-wide (Read-Only).</p>
           </div>
           
           <div className="relative max-w-sm w-full font-semibold">
@@ -373,13 +225,12 @@ export default function AdminDashboardClient({
               type="text"
               value={searchQuery}
               onChange={(e) => setSearchQuery(e.target.value)}
-              placeholder="Search by name or roll number..."
+              placeholder="Search by name or roll..."
               className="pl-9 pr-4 py-2 border border-slate-355 rounded-lg w-full text-xs text-slate-900 focus:outline-none bg-white"
             />
           </div>
         </div>
 
-        {/* Student Table */}
         <div className="overflow-x-auto">
           <table className="min-w-full divide-y divide-slate-200 text-left text-xs">
             <thead className="bg-slate-50 text-slate-500 font-bold uppercase tracking-wider">
@@ -388,27 +239,22 @@ export default function AdminDashboardClient({
                 <th className="px-6 py-4">Student Name</th>
                 <th className="px-6 py-4">Department / Program</th>
                 <th className="px-6 py-4">CGPA</th>
-                <th className="px-6 py-4">Activities (V / P / SD)</th>
-                <th className="px-6 py-4 text-right print:hidden">Passport</th>
+                <th className="px-6 py-4">Activities Total</th>
+                <th className="px-6 py-4 text-right">Audit</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-100 font-medium text-slate-900">
               {filteredStudents.length === 0 ? (
                 <tr>
                   <td colSpan={6} className="px-6 py-12 text-center text-slate-500">
-                    No students match your search filters.
+                    No students match your queries.
                   </td>
                 </tr>
               ) : (
                 filteredStudents.map(student => {
-                  const act = student.activities;
-                  const cont = student.contributions;
-                  const v = act.filter((a: any) => a.status === 'VERIFIED').length + cont.filter((c: any) => c.status === 'VERIFIED').length;
-                  const p = act.filter((a: any) => a.status === 'SUBMITTED' || a.status === 'UNDER_REVIEW').length + cont.filter((c: any) => c.status === 'SUBMITTED' || c.status === 'UNDER_REVIEW').length;
-                  const sd = act.filter((a: any) => a.status === 'SELF_DECLARED').length;
-                  
+                  const total = student.activities.length + student.contributions.length;
                   return (
-                    <tr key={student.id} className="hover:bg-slate-55/40 transition-colors">
+                    <tr key={student.id} className="hover:bg-slate-50/60 transition-colors">
                       <td className="px-6 py-4 font-mono font-bold text-slate-700">
                         {student.rollNumber}
                       </td>
@@ -422,14 +268,14 @@ export default function AdminDashboardClient({
                         {student.cgpa.toFixed(2)}
                       </td>
                       <td className="px-6 py-4 text-slate-500">
-                        <span className="font-bold text-emerald-600">{v} verified</span> &bull; <span className="font-bold text-amber-600">{p} pending</span> &bull; <span className="font-bold text-blue-600">{sd} self-declared</span>
+                        {total} development records
                       </td>
-                      <td className="px-6 py-4 text-right print:hidden">
+                      <td className="px-6 py-4 text-right">
                         <button
                           onClick={() => setSelectedStudent(student)}
                           className="inline-flex items-center text-xs font-bold text-indigo-900 hover:text-indigo-950 bg-indigo-50 hover:bg-indigo-100 px-3 py-1.5 rounded-lg transition-colors cursor-pointer"
                         >
-                          <span>Open Passport</span>
+                          <span>Open Audit</span>
                           <ChevronRight className="w-3.5 h-3.5 ml-1" />
                         </button>
                       </td>
@@ -444,15 +290,15 @@ export default function AdminDashboardClient({
 
       {/* Read-Only Passport Inspector Overlay Modal */}
       {selectedStudent && (
-        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-end animate-in fade-in-50 duration-200 print:hidden">
+        <div className="fixed inset-0 bg-slate-900/40 backdrop-blur-sm z-50 flex items-center justify-end animate-in fade-in-50 duration-200">
           <div className="bg-white w-full max-w-3xl h-full shadow-2xl flex flex-col justify-between animate-in slide-in-from-right duration-300">
-            {/* Modal Header */}
+            {/* Header */}
             <div className="p-6 border-b border-slate-200 flex justify-between items-center bg-indigo-950 text-white">
               <div>
                 <span className="text-[9px] uppercase font-extrabold bg-indigo-900 px-2 py-0.5 rounded text-indigo-200 tracking-wider">
-                  Audit Inspector Mode
+                  Audit Inspector Mode (Restricted read-only)
                 </span>
-                <h3 className="text-lg font-bold mt-2">{selectedStudent.user.name}'s Development Passport</h3>
+                <h3 className="text-lg font-bold mt-2">{selectedStudent.user.name}'s Passport</h3>
                 <p className="text-xs text-indigo-300 font-mono mt-0.5">Roll: {selectedStudent.rollNumber} &bull; Sem: {selectedStudent.currentSemester}</p>
               </div>
               <button 
@@ -463,7 +309,7 @@ export default function AdminDashboardClient({
               </button>
             </div>
 
-            {/* Modal Body */}
+            {/* Body */}
             <div className="p-6 flex-1 overflow-y-auto space-y-6">
               <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 grid grid-cols-1 sm:grid-cols-3 gap-4">
                 <div className="flex items-center space-x-3">
@@ -496,7 +342,7 @@ export default function AdminDashboardClient({
                 </div>
               )}
 
-              {/* Passport Records Ledger */}
+              {/* Passport Records Timeline */}
               <div className="space-y-4">
                 <h4 className="font-bold text-xs uppercase text-slate-700 tracking-wider">Passport Records Archive</h4>
                 
@@ -525,7 +371,7 @@ export default function AdminDashboardClient({
                     
                     <div>
                       <h5 className="font-bold text-slate-900 text-xs sm:text-sm">{item.title}</h5>
-                      <p className="text-slate-600 mt-1 whitespace-pre-line leading-relaxed">{item.description}</p>
+                      <p className="text-slate-655 mt-1 whitespace-pre-line leading-relaxed">{item.description}</p>
                     </div>
 
                     {item.type === 'Project Contribution' && item.technologies && (
@@ -572,7 +418,7 @@ export default function AdminDashboardClient({
               </div>
             </div>
 
-            {/* Modal Footer */}
+            {/* Footer */}
             <div className="p-4 border-t border-slate-200 bg-slate-50 text-right">
               <button
                 onClick={() => setSelectedStudent(null)}
