@@ -14,7 +14,7 @@ export default async function CoordinatorLayout({ children }: LayoutProps) {
   const session = await getSession();
 
   if (!session || session.role !== 'COORDINATOR') {
-    redirect('/');
+    redirect('/login');
   }
 
   // Fetch coordinator details
@@ -23,7 +23,7 @@ export default async function CoordinatorLayout({ children }: LayoutProps) {
   });
 
   if (!coordinator) {
-    redirect('/');
+    redirect('/login');
   }
 
   const navItems = [

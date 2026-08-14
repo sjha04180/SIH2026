@@ -206,7 +206,7 @@ async function main() {
 
   // Create 10 Students
   const studentsData = [
-    { name: 'Sachin Jha', email: 'sachin@sih.edu', pass: 'sachin123', roll: '2026CSE001', sem: 7, cgpa: 9.1, sgpa: 9.3, att: 88.5, comp: 85, progId: progBTechCSE.id, deptId: deptCSE.id },
+    { name: 'Rohan Sharma', email: 'rohan@sih.edu', pass: 'rohan123', roll: '2026CSE001', sem: 7, cgpa: 9.1, sgpa: 9.3, att: 88.5, comp: 85, progId: progBTechCSE.id, deptId: deptCSE.id },
     { name: 'Hritik Jha', email: 'hritik@sih.edu', pass: 'hritik123', roll: '2026CSE002', sem: 7, cgpa: 8.7, sgpa: 8.9, att: 82.0, comp: 80, progId: progBTechCSE.id, deptId: deptCSE.id },
     { name: 'Yash Gupta', email: 'yash@sih.edu', pass: 'yash123', roll: '2026CSE003', sem: 7, cgpa: 8.5, sgpa: 8.4, att: 79.5, comp: 78, progId: progBTechCSE.id, deptId: deptCSE.id },
     { name: 'Divya Sharma', email: 'divya@sih.edu', pass: 'student123', roll: '2026CSE004', sem: 7, cgpa: 9.4, sgpa: 9.6, att: 92.4, comp: 90, progId: progBTechCSE.id, deptId: deptCSE.id },
@@ -263,24 +263,24 @@ async function main() {
   }
   console.log('Created 10 Student Profiles with Academic Records.');
 
-  const studentSachin = dbStudents[0];
+  const studentRohan = dbStudents[0];
   const studentHritik = dbStudents[1];
   const studentYash = dbStudents[2];
   const studentDivya = dbStudents[3];
   const studentAnanya = dbStudents[4];
 
-  // 7. Create Student Profile Links (For Sachin)
+  // 7. Create Student Profile Links (For Rohan)
   const profileLinks = [
-    { platformName: 'LinkedIn', profileUrl: 'https://linkedin.com/in/sachinjha-demo', displayOrder: 1 },
-    { platformName: 'GitHub', profileUrl: 'https://github.com/sachinjha-demo', displayOrder: 2 },
-    { platformName: 'LeetCode', profileUrl: 'https://leetcode.com/sachinjha-demo', displayOrder: 3 },
+    { platformName: 'LinkedIn', profileUrl: 'https://linkedin.com/in/rohanjha-demo', displayOrder: 1 },
+    { platformName: 'GitHub', profileUrl: 'https://github.com/rohanjha-demo', displayOrder: 2 },
+    { platformName: 'LeetCode', profileUrl: 'https://leetcode.com/rohanjha-demo', displayOrder: 3 },
     { platformName: 'ORCID', profileUrl: 'https://orcid.org/0009-0001-9988-7766', displayOrder: 4 },
   ];
 
   for (const pl of profileLinks) {
     await prisma.profileLink.create({
       data: {
-        studentId: studentSachin.id,
+        studentId: studentRohan.id,
         ...pl,
       },
     });
@@ -304,10 +304,10 @@ async function main() {
 
   console.log('Created Student Profile Links.');
 
-  // 8. Create Student Skills (Sachin, Hritik)
+  // 8. Create Student Skills (Rohan, Hritik)
   await prisma.studentSkill.create({
     data: {
-      studentId: studentSachin.id,
+      studentId: studentRohan.id,
       skillId: dbSkills['React.js'].id,
       level: 'Expert',
       status: 'SELF_DECLARED',
@@ -315,7 +315,7 @@ async function main() {
   });
   await prisma.studentSkill.create({
     data: {
-      studentId: studentSachin.id,
+      studentId: studentRohan.id,
       skillId: dbSkills['Node.js'].id,
       level: 'Intermediate',
       status: 'VERIFIED',
@@ -334,10 +334,10 @@ async function main() {
   console.log('Created Student Skills.');
 
   // 9. Create Activities
-  // Student A (Sachin Jha) - YouTube React Learning (Self Declared / Unverified)
+  // Student A (Rohan Sharma) - YouTube React Learning (Self Declared / Unverified)
   const actYouTube = await prisma.activity.create({
     data: {
-      studentId: studentSachin.id,
+      studentId: studentRohan.id,
       categoryId: dbCategories['YouTube Learning'].id,
       type: 'YouTube Learning',
       title: 'React.js Complete Tutorial for Beginners',
@@ -354,8 +354,8 @@ async function main() {
   await prisma.verificationLog.create({
     data: {
       activityId: actYouTube.id,
-      actorId: studentSachin.userId,
-      actorName: studentSachin.user.name,
+      actorId: studentRohan.userId,
+      actorName: studentRohan.user.name,
       action: 'SUBMIT',
       previousStatus: 'DRAFT',
       newStatus: 'SELF_DECLARED',
@@ -363,10 +363,10 @@ async function main() {
     },
   });
 
-  // Student A (Sachin Jha) - Hackathon (EvidenceUploaded, routed to Coordinator, status: VERIFIED)
+  // Student A (Rohan Sharma) - Hackathon (EvidenceUploaded, routed to Coordinator, status: VERIFIED)
   const actHackathon1 = await prisma.activity.create({
     data: {
-      studentId: studentSachin.id,
+      studentId: studentRohan.id,
       categoryId: dbCategories['Hackathon'].id,
       type: 'Hackathon',
       title: 'MumbaiHacks 2026',
@@ -389,8 +389,8 @@ async function main() {
   await prisma.verificationLog.create({
     data: {
       activityId: actHackathon1.id,
-      actorId: studentSachin.userId,
-      actorName: studentSachin.user.name,
+      actorId: studentRohan.userId,
+      actorName: studentRohan.user.name,
       action: 'SUBMIT',
       previousStatus: 'DRAFT',
       newStatus: 'SUBMITTED',
@@ -556,16 +556,16 @@ async function main() {
       type: 'TEAM',
       startDate: new Date('2026-01-10'),
       endDate: new Date('2026-04-15'),
-      repoUrl: 'https://github.com/sachinjha-demo/smart-campus',
+      repoUrl: 'https://github.com/rohanjha-demo/smart-campus',
       demoUrl: 'https://smart-campus-demo.sih.edu',
       technologies: 'React, Node.js, Express, PostgreSQL, Prisma',
     },
   });
 
-  // Sachins Contribution (Backend developer, Routed to Faculty, Status: SUBMITTED)
+  // Rohans Contribution (Backend developer, Routed to Faculty, Status: SUBMITTED)
   await prisma.projectContribution.create({
     data: {
-      studentId: studentSachin.id,
+      studentId: studentRohan.id,
       projectId: projectSmart.id,
       projectName: projectSmart.name,
       projectDesc: projectSmart.description,

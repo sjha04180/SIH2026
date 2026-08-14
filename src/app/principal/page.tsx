@@ -7,7 +7,7 @@ import PrincipalClient from './PrincipalClient';
 export default async function PrincipalPage() {
   const session = await getSession();
   if (!session || session.role !== 'PRINCIPAL') {
-    redirect('/');
+    redirect('/login');
   }
 
   // Load all students and their activity logs (read-only audit ledger)

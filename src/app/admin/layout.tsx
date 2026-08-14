@@ -13,7 +13,7 @@ export default async function AdminLayout({ children }: LayoutProps) {
   const session = await getSession();
 
   if (!session || session.role !== 'ADMIN') {
-    redirect('/');
+    redirect('/login');
   }
 
   const navItems = [

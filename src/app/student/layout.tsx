@@ -14,7 +14,7 @@ export default async function StudentLayout({ children }: LayoutProps) {
   const session = await getSession();
 
   if (!session || session.role !== 'STUDENT') {
-    redirect('/');
+    redirect('/login');
   }
 
   // Fetch student info
@@ -27,7 +27,7 @@ export default async function StudentLayout({ children }: LayoutProps) {
   });
 
   if (!student) {
-    redirect('/');
+    redirect('/login');
   }
 
   const navItems = [

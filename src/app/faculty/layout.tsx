@@ -14,7 +14,7 @@ export default async function FacultyLayout({ children }: LayoutProps) {
   const session = await getSession();
 
   if (!session || session.role !== 'FACULTY') {
-    redirect('/');
+    redirect('/login');
   }
 
   // Fetch faculty profile details
@@ -23,7 +23,7 @@ export default async function FacultyLayout({ children }: LayoutProps) {
   });
 
   if (!faculty) {
-    redirect('/');
+    redirect('/login');
   }
 
   const navItems = [

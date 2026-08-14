@@ -13,7 +13,7 @@ export default async function PrincipalLayout({ children }: LayoutProps) {
   const session = await getSession();
 
   if (!session || session.role !== 'PRINCIPAL') {
-    redirect('/');
+    redirect('/login');
   }
 
   const navItems = [
