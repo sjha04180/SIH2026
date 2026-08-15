@@ -14,7 +14,7 @@ const geistMono = Geist_Mono({
 });
 
 export const metadata: Metadata = {
-  title: 'Student Development Passport | Centralized & Verified Student Records',
+  title: 'StudentSetu | Centralized & Verified Student Records',
   description: 'A centralized, evidence-aware, and appropriately verified student activity and development record.',
 };
 

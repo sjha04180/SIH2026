@@ -38,11 +38,9 @@ export default async function FacultyLayout({ children }: LayoutProps) {
         <div className="flex flex-col">
           {/* Header */}
           <div className="p-6 border-b border-indigo-900 flex items-center space-x-3">
-            <div className="bg-indigo-900 p-2 rounded-lg text-white">
-              <Award className="w-6 h-6" />
-            </div>
+            <img src="/logo.png" alt="StudentSetu Logo" className="w-8 h-8 rounded-lg object-contain bg-white p-0.5" />
             <div>
-              <span className="font-bold text-sm leading-tight block">Digital Passport</span>
+              <span className="font-bold text-sm leading-tight block">StudentSetu</span>
               <span className="text-xs text-indigo-300">Faculty/TG Portal</span>
             </div>
           </div>
@@ -93,8 +91,8 @@ export default async function FacultyLayout({ children }: LayoutProps) {
         {/* Mobile Header */}
         <header className="bg-indigo-950 text-white p-4 flex items-center justify-between md:hidden border-b border-indigo-900">
           <div className="flex items-center space-x-2">
-            <Award className="w-5 h-5" />
-            <span className="font-bold text-sm">Faculty Portal</span>
+            <img src="/logo.png" alt="StudentSetu Logo" className="w-6 h-6 rounded-md object-contain bg-white p-0.5" />
+            <span className="font-bold text-sm">StudentSetu</span>
           </div>
           <div className="flex items-center space-x-4">
             <span className="text-xs font-semibold bg-indigo-900 px-2.5 py-1 rounded-full uppercase tracking-wider text-indigo-200">

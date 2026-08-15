@@ -99,14 +99,14 @@ export default function LoginPage() {
   return (
     <main className="min-h-screen bg-slate-50 flex flex-col justify-center py-12 sm:px-6 lg:px-8 font-sans">
       <div className="sm:mx-auto sm:w-full sm:max-w-md text-center">
-        <div className="inline-flex items-center justify-center p-3 bg-indigo-900 text-white rounded-xl shadow-md mb-4">
-          <School className="w-8 h-8" />
+        <div className="inline-flex items-center justify-center mb-4">
+          <img src="/logo.png" alt="StudentSetu Logo" className="w-16 h-16 rounded-xl shadow-md bg-white object-contain" />
         </div>
         <h1 className="text-3xl font-extrabold text-slate-900 tracking-tight">
-          Student Development Passport
+          StudentSetu
         </h1>
         <p className="mt-2 text-sm text-slate-600 max-w-sm mx-auto">
-          A centralized, evidence-aware, and appropriately verified student development record.
+          A centralized, evidence-aware, and appropriately verified student development platform.
         </p>
       </div>
 

@@ -90,7 +90,7 @@ export default function ReportClient({ student, sessionName }: ReportClientProps
             SIH Institute of Higher Education
           </h2>
           <h3 className="text-base font-bold text-indigo-950 uppercase tracking-widest">
-            Student Development Passport Report
+            StudentSetu Passport Report
           </h3>
           <p className="text-xs text-slate-500 font-medium">
             Generated on: {new Date().toLocaleDateString('en-IN', { day: 'numeric', month: 'long', year: 'numeric' })} &bull; Official Digital Record

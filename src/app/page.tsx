@@ -50,11 +50,9 @@ export default function LandingPage() {
       <header className={`sticky top-0 z-40 w-full transition-all duration-200 ${scrolled ? 'bg-white/80 backdrop-blur-md border-b border-slate-200 shadow-sm' : 'bg-transparent'}`}>
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 h-16 flex items-center justify-between">
           <div className="flex items-center space-x-2.5">
-            <div className="bg-indigo-900 text-white p-2 rounded-lg shadow-sm">
-              <Award className="w-5 h-5" />
-            </div>
+            <img src="/logo.png" alt="StudentSetu Logo" className="w-8 h-8 rounded-lg object-contain shadow-sm bg-white" />
             <span className="font-bold text-sm sm:text-base text-slate-900 tracking-tight">
-              Student Development Passport
+              StudentSetu
             </span>
           </div>
 
@@ -129,14 +127,14 @@ export default function LandingPage() {
         {/* HERO LEFT COLUMN */}
         <div className="lg:col-span-6 space-y-6 text-left">
           <span className="inline-flex px-3 py-1 bg-indigo-50 border border-indigo-150 rounded-full text-[10px] font-bold text-indigo-950 uppercase tracking-widest">
-            Student Development Platform
+            StudentSetu Platform
           </span>
           <h1 className="text-4xl sm:text-5xl font-black text-slate-950 tracking-tight leading-[1.1]">
             Your development journey, <br />
             <span className="text-indigo-900">in one trusted record.</span>
           </h1>
           <p className="text-slate-650 text-sm sm:text-base leading-relaxed max-w-xl">
-            Keep your academic context, activities, projects, achievements and learning in one structured Student Development Passport — with the right level of evidence and verification for every record.
+            Keep your academic context, activities, projects, achievements and learning in one structured StudentSetu Passport — with the right level of evidence and verification for every record.
           </p>
           <div className="flex flex-col sm:flex-row items-stretch sm:items-center gap-3 pt-2">
             <Link 
@@ -313,7 +311,7 @@ export default function LandingPage() {
             <div className="flex items-center space-x-3">
               <Award className="w-6 h-6 text-indigo-400 shrink-0" />
               <div>
-                <h5 className="font-extrabold text-xs sm:text-sm">Student Development Passport</h5>
+                <h5 className="font-extrabold text-xs sm:text-sm">StudentSetu Passport</h5>
                 <p className="text-[10px] sm:text-xs text-indigo-300">Centralized, evidence-linked, and structured academic passport ledger.</p>
               </div>
             </div>
@@ -805,8 +803,8 @@ export default function LandingPage() {
           {/* Footer Branding */}
           <div className="md:col-span-6 space-y-3">
             <div className="flex items-center space-x-2 text-white">
-              <Award className="w-5 h-5 text-indigo-400" />
-              <span className="font-bold text-sm">Student Development Passport</span>
+              <img src="/logo.png" alt="StudentSetu Logo" className="w-8 h-8 rounded-lg object-contain bg-white p-0.5" />
+              <span className="font-bold text-sm">StudentSetu</span>
             </div>
             <p className="text-indigo-200/60 max-w-sm leading-relaxed">
               A centralized, evidence-aware, and appropriately verified student activity and development record for higher education institutions.
@@ -829,7 +827,7 @@ export default function LandingPage() {
 
         {/* Footer legal */}
         <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 pt-8 mt-8 border-t border-indigo-900/60 flex flex-col sm:flex-row justify-between items-center text-[10px] text-indigo-305/40 font-semibold gap-3">
-          <span>SIH25093 &bull; Student Development Passport</span>
+          <span>SIH25093 &bull; StudentSetu</span>
           <span>&copy; {new Date().getFullYear()} SIH Internal Sandbox. All Rights Reserved.</span>
         </div>
       </footer>
