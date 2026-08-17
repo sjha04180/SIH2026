@@ -155,71 +155,180 @@ export default async function StudentDashboardPage() {
         </div>
       </div>
 
-      {/* Quick Action Grid */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
-        <Link 
-          href="/student/passport#add-activity" 
-          className="bg-indigo-900 hover:bg-indigo-950 text-white p-4 rounded-xl shadow-sm transition-colors flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-indigo-800/80 rounded-lg">
-              <FilePlus2 className="w-5 h-5 text-white" />
+      {/* Onboarding Recovery Access Banner */}
+      {!student.personalEmail && (
+        <div className="bg-indigo-50 border border-indigo-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start space-x-3.5">
+            <div className="bg-indigo-950 text-white p-2.5 rounded-xl shadow-sm shrink-0">
+              <GraduationCap className="w-5 h-5" />
             </div>
             <div>
-              <span className="font-bold text-sm block">Add Activity</span>
-              <span className="text-xs text-indigo-200">Hackathon, certification, etc.</span>
+              <h4 className="font-bold text-indigo-950 text-sm">Setup Recovery & Permanent Access</h4>
+              <p className="text-xs text-indigo-900/70 mt-1 leading-relaxed">
+                Add your personal email to ensure you retain lifelong access to your verified StudentSetu Passport after graduation.
+              </p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 group-hover:translate-x-1 transition-transform" />
-        </Link>
+          <Link
+            href="/student/profile"
+            className="inline-flex items-center px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm shrink-0 transition-all"
+          >
+            Configure Recovery
+          </Link>
+        </div>
+      )}
 
-        <Link 
-          href="/student/passport#add-project" 
-          className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 p-4 rounded-xl shadow-sm transition-colors flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-slate-100 rounded-lg text-slate-700">
-              <FolderPlus className="w-5 h-5" />
-            </div>
+      {/* Dynamic Status / Guidance Alerts */}
+      {returnedCount > 0 ? (
+        <div className="bg-orange-50 border border-orange-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start space-x-3">
+            <AlertTriangle className="w-5 h-5 text-orange-600 shrink-0 mt-0.5" />
             <div>
-              <span className="font-bold text-sm block">Add Project</span>
-              <span className="text-xs text-slate-500">Add team contribution & role</span>
+              <h4 className="font-bold text-slate-900 text-sm">Action Required</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                {returnedCount} of your recorded items have been returned by reviewers for corrections.
+              </p>
             </div>
           </div>
-          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-        </Link>
+          <Link
+            href="/student/passport?tab=view&status=RETURNED"
+            className="inline-flex items-center px-3.5 py-1.5 border border-orange-200 text-orange-700 hover:bg-orange-100/50 text-xs font-semibold rounded-lg shrink-0 transition-colors"
+          >
+            Fix Returned Records
+          </Link>
+        </div>
+      ) : pendingCount > 0 ? (
+        <div className="bg-amber-50 border border-amber-200 rounded-2xl p-5 shadow-sm flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4">
+          <div className="flex items-start space-x-3">
+            <Clock className="w-5 h-5 text-amber-600 shrink-0 mt-0.5" />
+            <div>
+              <h4 className="font-bold text-slate-900 text-sm">Awaiting Review</h4>
+              <p className="text-xs text-slate-500 mt-1">
+                You have {pendingCount} development records currently awaiting official review.
+              </p>
+            </div>
+          </div>
+          <Link
+            href="/student/passport?tab=view"
+            className="text-xs font-bold text-amber-800 hover:underline shrink-0 flex items-center"
+          >
+            <span>View Pending Progress</span>
+            <ArrowRight className="w-3 h-3 ml-1" />
+          </Link>
+        </div>
+      ) : totalActivities === 0 ? (
+        <div className="bg-white border border-slate-200 rounded-2xl p-8 text-center shadow-sm space-y-4">
+          <BookOpen className="w-10 h-10 text-slate-300 mx-auto" />
+          <div>
+            <h4 className="font-bold text-slate-900 text-sm">Your Passport is empty</h4>
+            <p className="text-xs text-slate-500 mt-1 max-w-sm mx-auto">
+              Start building your official StudentSetu profile by adding your first certified activity or project build.
+            </p>
+          </div>
+          <Link
+            href="/student/passport?tab=add-activity"
+            className="inline-flex items-center px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+          >
+            Record Your First Activity
+          </Link>
+        </div>
+      ) : (
+        <div className="bg-emerald-50 border border-emerald-200 rounded-2xl p-4 shadow-sm flex items-center space-x-3">
+          <CheckCircle2 className="w-5 h-5 text-emerald-600 shrink-0" />
+          <span className="text-xs font-semibold text-emerald-800">Your StudentSetu Passport is fully up to date!</span>
+        </div>
+      )}
 
-        <Link 
-          href="/student/passport" 
-          className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 p-4 rounded-xl shadow-sm transition-colors flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-slate-100 rounded-lg text-slate-700">
-              <BookOpen className="w-5 h-5" />
-            </div>
-            <div>
-              <span className="font-bold text-sm block">View Passport</span>
-              <span className="text-xs text-slate-500">Examine all verified records</span>
-            </div>
-          </div>
-          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-        </Link>
+      {/* Prominent How Can We Help Entry Section */}
+      <div className="bg-white border border-slate-200 rounded-2xl p-6 md:p-8 shadow-sm space-y-6">
+        <div>
+          <h3 className="text-lg font-extrabold text-slate-900">How can we help you today?</h3>
+          <p className="text-xs text-slate-500 mt-1">
+            Choose a guided flow below to submit certified achievements or generate printable academic files.
+          </p>
+        </div>
 
-        <Link 
-          href="/student/reports" 
-          className="bg-white hover:bg-slate-50 text-slate-900 border border-slate-200 p-4 rounded-xl shadow-sm transition-colors flex items-center justify-between group"
-        >
-          <div className="flex items-center space-x-3">
-            <div className="p-2 bg-slate-100 rounded-lg text-slate-700">
-              <Printer className="w-5 h-5" />
-            </div>
+        <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
+          {/* Action 1 */}
+          <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-xl flex flex-col justify-between h-48 group hover:border-indigo-900/30 transition-all hover:bg-slate-50/80">
             <div>
-              <span className="font-bold text-sm block">Generate Report</span>
-              <span className="text-xs text-slate-500">Print Passport report to PDF</span>
+              <div className="bg-indigo-900 text-white p-2 rounded-lg shadow-sm w-9 h-9 flex items-center justify-center">
+                <FilePlus2 className="w-5 h-5" />
+              </div>
+              <h4 className="font-extrabold text-slate-900 text-sm mt-4">Add an Activity</h4>
+              <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                Record hackathons, online certifications, workshops, internships, or self-learning.
+              </p>
             </div>
+            <Link
+              href="/student/passport?tab=add-activity"
+              className="inline-flex items-center text-xs font-bold text-indigo-900 mt-4 group-hover:text-indigo-950"
+            >
+              <span>Get Started</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1 transition-transform" />
+            </Link>
           </div>
-          <ArrowRight className="w-4 h-4 text-slate-400 group-hover:translate-x-1 transition-transform" />
-        </Link>
+
+          {/* Action 2 */}
+          <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-xl flex flex-col justify-between h-48 group hover:border-indigo-900/30 transition-all hover:bg-slate-50/80">
+            <div>
+              <div className="bg-slate-200 text-slate-700 p-2 rounded-lg w-9 h-9 flex items-center justify-center">
+                <FolderPlus className="w-5 h-5" />
+              </div>
+              <h4 className="font-extrabold text-slate-900 text-sm mt-4">Add a Project</h4>
+              <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                Describe a personal or team software build, including your specific technical role.
+              </p>
+            </div>
+            <Link
+              href="/student/passport?tab=add-project"
+              className="inline-flex items-center text-xs font-bold text-slate-700 mt-4 group-hover:text-indigo-900"
+            >
+              <span>Record Project</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          {/* Action 3 */}
+          <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-xl flex flex-col justify-between h-48 group hover:border-indigo-900/30 transition-all hover:bg-slate-50/80">
+            <div>
+              <div className="bg-slate-200 text-slate-700 p-2 rounded-lg w-9 h-9 flex items-center justify-center">
+                <BookOpen className="w-5 h-5" />
+              </div>
+              <h4 className="font-extrabold text-slate-900 text-sm mt-4">View My Passport</h4>
+              <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                Examine your entire developmental ledger, verification history, and feedback.
+              </p>
+            </div>
+            <Link
+              href="/student/passport"
+              className="inline-flex items-center text-xs font-bold text-slate-700 mt-4 group-hover:text-indigo-900"
+            >
+              <span>Examine Ledger</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+
+          {/* Action 4 */}
+          <div className="bg-slate-50 border border-slate-200/60 p-5 rounded-xl flex flex-col justify-between h-48 group hover:border-indigo-900/30 transition-all hover:bg-slate-50/80">
+            <div>
+              <div className="bg-slate-200 text-slate-700 p-2 rounded-lg w-9 h-9 flex items-center justify-center">
+                <Printer className="w-5 h-5" />
+              </div>
+              <h4 className="font-extrabold text-slate-900 text-sm mt-4">Generate My Report</h4>
+              <p className="text-[11px] text-slate-500 mt-2 leading-relaxed">
+                Select and compile records into an official PDF report for printing or sharing.
+              </p>
+            </div>
+            <Link
+              href="/student/reports"
+              className="inline-flex items-center text-xs font-bold text-slate-700 mt-4 group-hover:text-indigo-900"
+            >
+              <span>Run PDF Builder</span>
+              <ArrowRight className="w-3.5 h-3.5 ml-1.5 group-hover:translate-x-1 transition-transform" />
+            </Link>
+          </div>
+        </div>
       </div>
 
       {/* Main Grid: Academic & Metrics */}

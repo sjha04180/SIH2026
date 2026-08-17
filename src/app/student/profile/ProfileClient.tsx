@@ -28,6 +28,8 @@ interface Student {
   currentSemester: number;
   profileSummary: string | null;
   interests: string | null;
+  personalEmail: string | null;
+  accountStatus: string;
   program: { name: string };
   department: { name: string };
   profileLinks: ProfileLink[];
@@ -42,6 +44,8 @@ interface ProfileClientProps {
 export default function ProfileClient({ student, sessionName, sessionEmail }: ProfileClientProps) {
   const [profileSummary, setProfileSummary] = useState(student.profileSummary || '');
   const [interests, setInterests] = useState(student.interests || '');
+  const [personalEmail, setPersonalEmail] = useState(student.personalEmail || '');
+  const [accountStatus, setAccountStatus] = useState(student.accountStatus || 'Current Student');
   const [saveLoading, setSaveLoading] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [profileError, setProfileError] = useState('');
@@ -64,7 +68,7 @@ export default function ProfileClient({ student, sessionName, sessionEmail }: Pr
       const response = await fetch('/api/student/profile', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ profileSummary, interests }),
+        body: JSON.stringify({ profileSummary, interests, personalEmail, accountStatus }),
       });
 
       const data = await response.json();
@@ -231,6 +235,30 @@ export default function ProfileClient({ student, sessionName, sessionEmail }: Pr
                   placeholder="e.g. Distributed Systems, Decentralized Apps, Mobile UI design"
                   className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white"
                 />
+              </div>
+
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Personal Email Address (for recovery & alumni access)</label>
+                  <input
+                    type="email"
+                    value={personalEmail}
+                    onChange={(e) => setPersonalEmail(e.target.value)}
+                    placeholder="e.g. personal.email@gmail.com"
+                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white font-semibold"
+                  />
+                </div>
+                <div>
+                  <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Current Account / Student Status</label>
+                  <select
+                    value={accountStatus}
+                    onChange={(e) => setAccountStatus(e.target.value)}
+                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 bg-white font-semibold"
+                  >
+                    <option value="Current Student">Current Student</option>
+                    <option value="Graduated">Graduated (Alumni)</option>
+                  </select>
+                </div>
               </div>
 
               <div className="flex justify-end pt-2 border-t border-slate-100">

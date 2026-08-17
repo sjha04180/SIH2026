@@ -10,13 +10,16 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { profileSummary, interests } = await request.json();
+    const { profileSummary, interests, personalEmail, accountStatus } = await request.json();
 
     const updated = await prisma.student.update({
       where: { id: session.profileId },
       data: {
         profileSummary,
         interests,
+        personalEmail,
+        personalEmailVerified: !!personalEmail,
+        accountStatus,
       },
     });
 

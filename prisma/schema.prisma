@@ -52,29 +52,32 @@ model Program {
 }
 
 model Student {
-  id                String                @id @default(uuid())
-  userId            String                @unique
-  user              User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
-  rollNumber        String                @unique
-  institutionId     String
-  institution       Institution           @relation(fields: [institutionId], references: [id])
-  departmentId      String
-  department        Department            @relation(fields: [departmentId], references: [id])
-  programId         String
-  program           Program               @relation(fields: [programId], references: [id])
-  currentSemester   Int
-  batch             String
-  cgpa              Float
-  sgpa              Float
-  attendance        Float
-  profileCompletion Int                   @default(80)
-  profileSummary    String?
-  interests         String?
-  activities        Activity[]
-  contributions     ProjectContribution[]
-  academicRecords   AcademicRecord[]
-  profileLinks      ProfileLink[]
-  studentSkills     StudentSkill[]
+  id                    String                @id @default(uuid())
+  userId                String                @unique
+  user                  User                  @relation(fields: [userId], references: [id], onDelete: Cascade)
+  rollNumber            String                @unique
+  institutionId         String
+  institution           Institution           @relation(fields: [institutionId], references: [id])
+  departmentId          String
+  department            Department            @relation(fields: [departmentId], references: [id])
+  programId             String
+  program               Program               @relation(fields: [programId], references: [id])
+  currentSemester       Int
+  batch                 String
+  cgpa                  Float
+  sgpa                  Float
+  attendance            Float
+  profileCompletion     Int                   @default(80)
+  profileSummary        String?
+  interests             String?
+  personalEmail         String?
+  personalEmailVerified Boolean               @default(false)
+  accountStatus         String                @default("Current Student") // "Current Student" or "Graduated"
+  activities            Activity[]
+  contributions         ProjectContribution[]
+  academicRecords       AcademicRecord[]
+  profileLinks          ProfileLink[]
+  studentSkills         StudentSkill[]
 }
 
 model Faculty {

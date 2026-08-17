@@ -85,8 +85,12 @@ export default async function PrincipalLayout({ children }: LayoutProps) {
               Principal
             </span>
             <form action="/api/auth/logout" method="POST">
-              <button type="submit" className="text-indigo-300 hover:text-white">
-                <LogOut className="w-4 h-4" />
+              <button
+                type="submit"
+                className="inline-flex items-center space-x-1.5 px-2.5 py-1 bg-red-900/80 hover:bg-red-900 text-white text-[11px] font-bold rounded-lg transition-colors cursor-pointer"
+              >
+                <LogOut className="w-3.5 h-3.5" />
+                <span>Log Out</span>
               </button>
             </form>
           </div>

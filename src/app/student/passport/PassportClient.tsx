@@ -1,7 +1,7 @@
 // src/app/student/passport/PassportClient.tsx
 'use client';
 
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useRouter } from 'next/navigation';
 import { 
   Plus, 
@@ -21,7 +21,12 @@ import {
   Building,
   Info,
   Globe,
-  Tag
+  Tag,
+  ArrowLeft,
+  Users,
+  Check,
+  BookOpen,
+  Award
 } from 'lucide-react';
 
 interface PassportClientProps {
@@ -53,6 +58,73 @@ export default function PassportClient({
   const [categoryFilter, setCategoryFilter] = useState<string>('all');
   const [statusFilter, setStatusFilter] = useState<string>('all');
   const router = useRouter();
+
+  // Wizard Steps Tracking
+  const [actStep, setActStep] = useState<number>(1);
+  const [projStep, setProjStep] = useState<number>(1);
+
+  // Parse tabs and filters on mount
+  useEffect(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const tabParam = params.get('tab');
+      const statusParam = params.get('status');
+      if (tabParam === 'add-activity') {
+        setActiveTab('add-activity');
+        setActStep(1);
+      } else if (tabParam === 'add-project') {
+        setActiveTab('add-project');
+        setProjStep(1);
+      } else if (tabParam === 'view') {
+        setActiveTab('view');
+      }
+      if (statusParam) {
+        setStatusFilter(statusParam);
+      }
+    }
+  }, []);
+
+  const handleCancelWizard = (type: 'activity' | 'project') => {
+    if (type === 'activity') {
+      if (actTitle || actOrganiser || actDesc) {
+        if (!confirm('Are you sure you want to abandon this activity wizard? All entered progress will be lost.')) {
+          return;
+        }
+      }
+      // Reset activity states
+      setActTitle('');
+      setActDate('');
+      setActOrganiser('');
+      setActRole('');
+      setActDesc('');
+      setActOutcome('');
+      setActEvidenceUrl('');
+      setUploadedActName('');
+      setActExternalLink('');
+      setActStep(1);
+      setActiveTab('view');
+    } else {
+      if (projName || projDesc || projCont) {
+        if (!confirm('Are you sure you want to abandon this project wizard? All entered progress will be lost.')) {
+          return;
+        }
+      }
+      // Reset project states
+      setProjName('');
+      setProjDesc('');
+      setProjStartDate('');
+      setProjEndDate('');
+      setProjRepoUrl('');
+      setProjDemoUrl('');
+      setProjEvidence('');
+      setUploadedProjName('');
+      setProjRole('');
+      setProjCont('');
+      setProjTech('');
+      setProjStep(1);
+      setActiveTab('view');
+    }
+  };
 
   // Activity Form State
   const [actType, setActType] = useState('Hackathon');
@@ -244,18 +316,7 @@ export default function PassportClient({
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add activity');
-
-      // Reset
-      setActTitle('');
-      setActDate('');
-      setActOrganiser('');
-      setActRole('');
-      setActDesc('');
-      setActOutcome('');
-      setActEvidenceUrl('');
-      setActExternalLink('');
-      
-      setActiveTab('view');
+      setActStep(5);
       router.refresh();
     } catch (err: any) {
       setActError(err.message || 'Something went wrong.');
@@ -289,20 +350,7 @@ export default function PassportClient({
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add project');
-
-      // Reset
-      setProjName('');
-      setProjDesc('');
-      setProjStartDate('');
-      setProjEndDate('');
-      setProjRepoUrl('');
-      setProjDemoUrl('');
-      setProjEvidence('');
-      setProjRole('');
-      setProjCont('');
-      setProjTech('');
-
-      setActiveTab('view');
+      setProjStep(5);
       router.refresh();
     } catch (err: any) {
       setProjError(err.message || 'Something went wrong.');
@@ -636,378 +684,861 @@ export default function PassportClient({
         </div>
       )}
 
-      {/* Tab 2: ADD ACTIVITY */}
+      {/* Tab 2: ADD ACTIVITY WIZARD */}
       {activeTab === 'add-activity' && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-900">Record a Development Activity</h2>
-            <p className="text-xs text-slate-500 mt-1">All activities are routed to specific verification authorities based on category config.</p>
+          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Add Activity Workflow</h2>
+              <p className="text-xs text-slate-500 mt-1">Record co-curricular or technical work for your StudentSetu Passport.</p>
+            </div>
+            {actStep < 5 && (
+              <button
+                type="button"
+                onClick={() => handleCancelWizard('activity')}
+                className="text-xs font-bold text-red-650 hover:underline self-start sm:self-center"
+              >
+                Abandon Wizard
+              </button>
+            )}
           </div>
 
-          <form onSubmit={handleAddActivity} className="p-6 space-y-6">
+          <div className="p-6">
+            {/* Stepper Progress Indicator */}
+            {actStep < 5 && (
+              <div className="flex items-center justify-between max-w-xl mx-auto mb-8 font-semibold text-xs text-slate-500">
+                {['Type', 'Details', 'Evidence', 'Review'].map((step, idx) => {
+                  const stepNum = idx + 1;
+                  const isActive = actStep === stepNum;
+                  const isCompleted = actStep > stepNum;
+                  return (
+                    <div key={step} className="flex items-center flex-1 last:flex-initial">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold border transition-all ${
+                          isActive 
+                            ? 'bg-indigo-900 border-indigo-900 text-white shadow-sm ring-4 ring-indigo-50' 
+                            : isCompleted 
+                              ? 'bg-emerald-500 border-emerald-500 text-white' 
+                              : 'bg-white border-slate-300 text-slate-400'
+                        }`}>
+                          {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepNum}
+                        </div>
+                        <span className={`hidden sm:inline ${isActive ? 'text-indigo-950 font-bold' : isCompleted ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {step}
+                        </span>
+                      </div>
+                      {idx < 3 && (
+                        <div className={`flex-1 h-0.5 mx-4 transition-all ${isCompleted ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {actError && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-700">
+              <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-700 mb-6">
                 {actError}
               </div>
             )}
 
-            <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-              {/* Type Select */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Activity Category</label>
-                <select
-                  value={actType}
-                  onChange={(e) => setActType(e.target.value)}
-                  className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none"
-                >
-                  <option value="Hackathon">Hackathon</option>
-                  <option value="Competition">Competition</option>
-                  <option value="Workshop">Workshop</option>
-                  <option value="Seminar">Seminar</option>
-                  <option value="Club/SIG Participation">Club / SIG Participation</option>
-                  <option value="Project">Project (hosted)</option>
-                  <option value="Research">Research paper</option>
-                  <option value="Internship">Internship</option>
-                  <option value="Award">Award</option>
-                  <option value="Certification">Certification</option>
-                  <option value="YouTube Learning">YouTube Learning</option>
-                  <option value="Self-study">Self-study / Tutorial</option>
-                  <option value="Personal Practice">Personal Practice</option>
-                  <option value="Unhosted Personal Project">Unhosted Personal Project</option>
-                </select>
-              </div>
-
-              {/* Title */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Activity Title</label>
-                <input
-                  type="text"
-                  required
-                  value={actTitle}
-                  onChange={(e) => setActTitle(e.target.value)}
-                  placeholder="e.g. Smart Campus Dev, Advanced Python Tutorial"
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                />
-              </div>
-
-              {/* Organiser */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Organiser / Platform Source</label>
-                <input
-                  type="text"
-                  required
-                  value={actOrganiser}
-                  onChange={(e) => setActOrganiser(e.target.value)}
-                  placeholder="e.g. ACM chapter, Coursera, Youtube channel name"
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                />
-              </div>
-
-              {/* Role */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">My Role</label>
-                <input
-                  type="text"
-                  required
-                  value={actRole}
-                  onChange={(e) => setActRole(e.target.value)}
-                  placeholder="e.g. Lead dev, Attendee, Self-study student"
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                />
-              </div>
-
-              {/* Date */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Date Completed</label>
-                <input
-                  type="date"
-                  required
-                  value={actDate}
-                  onChange={(e) => setActDate(e.target.value)}
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                />
-              </div>
-
-              {/* External URL */}
-              <div>
-                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">External Reference URL (optional)</label>
-                <input
-                  type="url"
-                  value={actExternalLink}
-                  onChange={(e) => setActExternalLink(e.target.value)}
-                  placeholder="https://..."
-                  className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                />
-              </div>
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Detailed Description</label>
-              <textarea
-                required
-                rows={3}
-                value={actDesc}
-                onChange={(e) => setActDesc(e.target.value)}
-                placeholder="Details of skills acquired, tools used..."
-                className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-              />
-            </div>
-
-            <div>
-              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Learning Outcome</label>
-              <input
-                type="text"
-                value={actOutcome}
-                onChange={(e) => setActOutcome(e.target.value)}
-                placeholder="e.g. Created local repository sandbox, received certified badge"
-                className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-              />
-            </div>
-
-            {/* Routing indicator */}
-            <div className={`p-4 rounded-xl border flex gap-3.5 transition-all ${routeInfo.style}`}>
-              <Info className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-sm block">Verification Route: {routeInfo.route}</span>
-                <p className="text-xs mt-1 leading-relaxed">{routeInfo.desc}</p>
-              </div>
-            </div>
-
-            {/* Evidence File Upload */}
-            {routeInfo.route !== 'Self-Declared — No Verification Queue' ? (
-              <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
-                <h3 className="font-bold text-xs uppercase text-slate-700 tracking-wider">Upload / Link Evidence</h3>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Upload File (PDF / Image &bull; Max 5MB)</label>
-                    <input
-                      type="file"
-                      accept=".pdf,.png,.jpg,.jpeg,.webp"
-                      onChange={(e) => handleFileChange(e, 'activity')}
-                      className="border border-slate-350 rounded-lg w-full px-3 py-1 text-xs text-slate-950 bg-white cursor-pointer"
-                    />
-                    {uploadingAct && <span className="text-[10px] text-indigo-900 font-bold block mt-1 animate-pulse">Uploading file...</span>}
-                    {uploadedActName && (
-                      <span className="text-[10px] text-emerald-600 font-bold block mt-1">
-                        ✓ Uploaded: {uploadedActName}
-                      </span>
-                    )}
-                  </div>
-                  <div>
-                    <label className="block text-xs font-bold text-slate-500 mb-1">Evidence Type</label>
-                    <select
-                      value={actEvidenceType}
-                      onChange={(e) => setActEvidenceType(e.target.value)}
-                      className="border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
-                    >
-                      <option value="PDF">PDF Certificate</option>
-                      <option value="Image">Image File</option>
-                      <option value="Document">Word Document</option>
-                      <option value="URL">Verification Link</option>
-                    </select>
-                  </div>
+            {/* STEP 1: ACTIVITY TYPE */}
+            {actStep === 1 && (
+              <div className="space-y-6">
+                <div className="text-center max-w-md mx-auto">
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">What did you do?</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Select the activity category below. We will customize the details required based on your selection.
+                  </p>
                 </div>
-              </div>
-            ) : (
-              <div className="bg-slate-100 border border-slate-300 rounded-xl p-4 text-xs text-slate-655 flex items-center space-x-2">
-                <CheckCircle2 className="w-4 h-4 text-slate-500" />
-                <span>No proof required. This self-declared entry will directly be added to your ledger.</span>
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4 max-w-4xl mx-auto">
+                  {[
+                    { value: 'Hackathon', label: 'Hackathon', desc: 'Collaborative development hack events, prototype building, and pitches.', icon: Award },
+                    { value: 'Competition', label: 'Competition', desc: 'Academic, coding, or departmental challenges.', icon: Tag },
+                    { value: 'Workshop', label: 'Workshop / Seminar', desc: 'Attending technical presentations, bootcamps, or training.', icon: Layers },
+                    { value: 'Internship', label: 'Internship', desc: 'Industry training, work experiences, or research positions.', icon: Building },
+                    { value: 'Club/SIG Participation', label: 'Club / SIG Activity', desc: 'Active participation or officer leadership roles in interest groups.', icon: Users },
+                    { value: 'Certification', label: 'Certification', desc: 'Acquiring industry certifications (AWS, Coursera, Oracle, etc).', icon: FileText },
+                    { value: 'Self-study', label: 'Self-Learning', desc: 'Non-credited personal study, tutorials, or YouTube learning.', icon: GraduationCap },
+                    { value: 'Other', label: 'Other Activities', desc: 'Any other co-curricular activity or personal development.', icon: HelpCircle }
+                  ].map((c) => {
+                    const Icon = c.icon;
+                    return (
+                      <button
+                        key={c.value}
+                        type="button"
+                        onClick={() => {
+                          setActType(c.value);
+                          setActStep(2);
+                        }}
+                        className={`text-left p-4 rounded-xl border transition-all flex items-start space-x-3.5 ${
+                          actType === c.value 
+                            ? 'bg-indigo-50 border-indigo-900 text-indigo-950 shadow-sm ring-1 ring-indigo-900/10' 
+                            : 'bg-white border-slate-205 border-slate-200 hover:border-slate-350 hover:bg-slate-50'
+                        }`}
+                      >
+                        <div className={`p-2 rounded-lg shrink-0 ${actType === c.value ? 'bg-indigo-900 text-white' : 'bg-slate-100 text-slate-500'}`}>
+                          <Icon className="w-4 h-4" />
+                        </div>
+                        <div>
+                          <h5 className="font-extrabold text-xs uppercase tracking-wider text-slate-800">{c.label}</h5>
+                          <p className="text-[11px] text-slate-500 mt-1 leading-relaxed">{c.desc}</p>
+                        </div>
+                      </button>
+                    );
+                  })}
+                </div>
               </div>
             )}
 
-            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setActiveTab('view')}
-                className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={actLoading}
-                className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
-              >
-                {actLoading ? 'Saving...' : 'Save Activity'}
-              </button>
-            </div>
-          </form>
+            {/* STEP 2: DETAILS */}
+            {actStep === 2 && (
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">Enter Activity Details</h3>
+                  <p className="text-xs text-slate-500 mt-1">Please provide details regarding the selected category ({actType}).</p>
+                </div>
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      {actType === 'Hackathon' ? 'Hackathon Name' : actType === 'Internship' ? 'Internship Title' : 'Activity Title'}
+                    </label>
+                    <input
+                      type="text"
+                      value={actTitle}
+                      onChange={(e) => setActTitle(e.target.value)}
+                      placeholder={actType === 'Hackathon' ? 'e.g. Smart Campus Dev' : actType === 'Internship' ? 'e.g. Frontend Intern' : 'e.g. Advanced Python Tutorial'}
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      {actType === 'Hackathon' ? 'Organizer' : actType === 'Internship' ? 'Company Name' : 'Organizer / Source'}
+                    </label>
+                    <input
+                      type="text"
+                      value={actOrganiser}
+                      onChange={(e) => setActOrganiser(e.target.value)}
+                      placeholder={actType === 'Hackathon' ? 'e.g. ACM chapter' : actType === 'Internship' ? 'e.g. Google' : 'e.g. Coursera'}
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Date Completed</label>
+                    <input
+                      type="date"
+                      value={actDate}
+                      onChange={(e) => setActDate(e.target.value)}
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">
+                      {actType === 'Certification' ? 'Credential ID (optional)' : 'My Role'}
+                    </label>
+                    <input
+                      type="text"
+                      value={actRole}
+                      onChange={(e) => setActRole(e.target.value)}
+                      placeholder={actType === 'Hackathon' ? 'e.g. Lead dev' : actType === 'Certification' ? 'e.g. AWS-123' : 'e.g. Attendee'}
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Learning Outcome / Achievements</label>
+                    <input
+                      type="text"
+                      value={actOutcome}
+                      onChange={(e) => setActOutcome(e.target.value)}
+                      placeholder="e.g. Developed REST APIs, 1st place prize, certification credential"
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Detailed Description</label>
+                    <textarea
+                      rows={3}
+                      value={actDesc}
+                      onChange={(e) => setActDesc(e.target.value)}
+                      placeholder="Describe what you learned, libraries used, or tasks completed..."
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                </div>
+                <div className="flex justify-between pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setActStep(1)}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (actTitle && actOrganiser && actRole && actDate && actDesc) {
+                        setActError('');
+                        setActStep(3);
+                      } else {
+                        setActError('Please fill in all required fields (Title, Organizer, Role, Date, and Description).');
+                      }
+                    }}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: EVIDENCE */}
+            {actStep === 3 && (
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">Attach Verification Proof</h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Evidence helps verification, but not every activity requires a certificate.
+                  </p>
+                </div>
+
+                {routeInfo.route !== 'Self-Declared — No Verification Queue' ? (
+                  <div className="space-y-4">
+                    <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4">
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 mb-2">Upload Certificate File (PDF / Image &bull; Max 5MB)</label>
+                          <input
+                            type="file"
+                            accept=".pdf,.png,.jpg,.jpeg,.webp"
+                            onChange={(e) => handleFileChange(e, 'activity')}
+                            className="border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-950 bg-white cursor-pointer"
+                          />
+                          {uploadingAct && <span className="text-[10px] text-indigo-900 font-bold block mt-1 animate-pulse">Uploading file...</span>}
+                          {uploadedActName && (
+                            <span className="text-[10px] text-emerald-600 font-bold block mt-1">
+                              ✓ Uploaded: {uploadedActName}
+                            </span>
+                          )}
+                        </div>
+                        <div>
+                          <label className="block text-xs font-bold text-slate-500 mb-2">Evidence Type</label>
+                          <select
+                            value={actEvidenceType}
+                            onChange={(e) => setActEvidenceType(e.target.value)}
+                            className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                          >
+                            <option value="PDF">PDF Certificate</option>
+                            <option value="Image">Image File</option>
+                            <option value="Document">Word Document</option>
+                            <option value="URL">Verification Link</option>
+                          </select>
+                        </div>
+                      </div>
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Verification URL / Reference Link (optional)</label>
+                      <input
+                        type="url"
+                        value={actExternalLink}
+                        onChange={(e) => setActExternalLink(e.target.value)}
+                        placeholder="https://verify.credentials.com/..."
+                        className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                      />
+                    </div>
+                  </div>
+                ) : (
+                  <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 flex items-start space-x-3.5">
+                    <Info className="w-5 h-5 text-slate-400 shrink-0 mt-0.5" />
+                    <div>
+                      <span className="font-bold text-slate-900 text-xs block uppercase tracking-wider">Self-Declared Record</span>
+                      <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                        This activity can be recorded as Self-Declared. A certificate is not required.
+                      </p>
+                    </div>
+                  </div>
+                )}
+
+                <div className="flex justify-between pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setActStep(2)}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActError('');
+                      setActStep(4);
+                    }}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    Continue to Review
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 4: REVIEW */}
+            {actStep === 4 && (
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">Review & Submit</h3>
+                  <p className="text-xs text-slate-500 mt-1">Please inspect your record before final submission.</p>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-3.5 text-xs">
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Activity Category</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{actType}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Completion Date</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{actDate}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Activity Title</span>
+                    <span className="font-semibold text-slate-900 mt-0.5 block">{actTitle}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Organizer / Source</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{actOrganiser}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">My Role</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{actRole}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Learning Outcome</span>
+                    <span className="font-semibold text-slate-900 mt-0.5 block">{actOutcome || 'Not specified'}</span>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Description</span>
+                    <p className="font-semibold text-slate-800 mt-0.5 leading-relaxed whitespace-pre-line">{actDesc}</p>
+                  </div>
+                  {(actEvidenceUrl || actExternalLink) && (
+                    <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-4">
+                      {actEvidenceUrl && (
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Uploaded File</span>
+                          <span className="font-semibold text-indigo-900 mt-0.5 block">{uploadedActName || 'evidence.pdf'}</span>
+                        </div>
+                      )}
+                      {actExternalLink && (
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Verification Link</span>
+                          <a href={actExternalLink} target="_blank" rel="noreferrer" className="text-indigo-900 hover:underline mt-0.5 block truncate max-w-xs">{actExternalLink}</a>
+                        </div>
+                      )}
+                    </div>
+                  )}
+                </div>
+
+                <div className={`p-4 rounded-xl border flex gap-3.5 ${routeInfo.style}`}>
+                  <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-sm block">Verification Route: {routeInfo.route}</span>
+                    <p className="text-xs mt-1 leading-relaxed">
+                      {routeInfo.route === 'Self-Declared — No Verification Queue' 
+                        ? 'This self-study item does not go into review. It is saved directly to your ledger.' 
+                        : `This activity will be routed to the ${routeInfo.route} for review and validation.`}
+                    </p>
+                  </div>
+                </div>
+
+                <form onSubmit={handleAddActivity} className="flex justify-between pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setActStep(3)}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={actLoading}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    {actLoading ? 'Saving...' : 'Submit Activity'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* STEP 5: SUCCESS */}
+            {actStep === 5 && (
+              <div className="max-w-md mx-auto text-center py-8 space-y-6">
+                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Activity Recorded</h3>
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    Your activity has been successfully recorded in your StudentSetu Passport ledger.
+                  </p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold text-slate-700">
+                  Initial Status: {routeInfo.route === 'Self-Declared — No Verification Queue' ? (
+                    <span className="text-blue-700">Self-Declared (Saved)</span>
+                  ) : (
+                    <span className="text-amber-700">Pending Review</span>
+                  )}
+                </div>
+                <div className="flex justify-center space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setActStep(1);
+                      setActiveTab('view');
+                    }}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50"
+                  >
+                    View Passport Ledger
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Reset states
+                      setActTitle('');
+                      setActDate('');
+                      setActOrganiser('');
+                      setActRole('');
+                      setActDesc('');
+                      setActOutcome('');
+                      setActEvidenceUrl('');
+                      setUploadedActName('');
+                      setActExternalLink('');
+                      setActStep(1);
+                    }}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    Record Another
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
 
-      {/* Tab 3: ADD PROJECT */}
+      {/* Tab 3: ADD PROJECT WIZARD */}
       {activeTab === 'add-project' && (
         <div className="bg-white border border-slate-200 rounded-2xl shadow-sm overflow-hidden">
-          <div className="p-6 border-b border-slate-100 bg-slate-50/50">
-            <h2 className="text-lg font-bold text-slate-900">Record a Team/Personal Project</h2>
-            <p className="text-xs text-slate-500 mt-1">Specify overall metadata and details of your specific contribution.</p>
+          <div className="p-6 border-b border-slate-100 bg-slate-50/50 flex flex-col sm:flex-row sm:items-center justify-between gap-4">
+            <div>
+              <h2 className="text-lg font-bold text-slate-900">Record a Team/Personal Project</h2>
+              <p className="text-xs text-slate-500 mt-1">Specify overall metadata and details of your specific contribution.</p>
+            </div>
+            {projStep < 5 && (
+              <button
+                type="button"
+                onClick={() => handleCancelWizard('project')}
+                className="text-xs font-bold text-red-655 text-red-650 hover:underline self-start sm:self-center"
+              >
+                Abandon Wizard
+              </button>
+            )}
           </div>
 
-          <form onSubmit={handleAddProject} className="p-6 space-y-6">
+          <div className="p-6 animate-in fade-in duration-200">
+            {/* Stepper Progress */}
+            {projStep < 5 && (
+              <div className="flex items-center justify-between max-w-xl mx-auto mb-8 font-semibold text-xs text-slate-500">
+                {['Project Details', 'Your Contribution', 'Evidence', 'Review'].map((step, idx) => {
+                  const stepNum = idx + 1;
+                  const isActive = projStep === stepNum;
+                  const isCompleted = projStep > stepNum;
+                  return (
+                    <div key={step} className="flex items-center flex-1 last:flex-initial">
+                      <div className="flex items-center space-x-2">
+                        <div className={`w-7 h-7 rounded-full flex items-center justify-center font-bold border transition-all ${
+                          isActive 
+                            ? 'bg-indigo-900 border-indigo-900 text-white shadow-sm ring-4 ring-indigo-50' 
+                            : isCompleted 
+                              ? 'bg-emerald-500 border-emerald-500 text-white' 
+                              : 'bg-white border-slate-300 text-slate-400'
+                        }`}>
+                          {isCompleted ? <Check className="w-3.5 h-3.5" /> : stepNum}
+                        </div>
+                        <span className={`hidden sm:inline ${isActive ? 'text-indigo-950 font-bold' : isCompleted ? 'text-emerald-600' : 'text-slate-400'}`}>
+                          {step}
+                        </span>
+                      </div>
+                      {idx < 3 && (
+                        <div className={`flex-1 h-0.5 mx-4 transition-all ${isCompleted ? 'bg-emerald-400' : 'bg-slate-200'}`} />
+                      )}
+                    </div>
+                  );
+                })}
+              </div>
+            )}
+
             {projError && (
-              <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-700">
+              <div className="bg-red-50 border-l-4 border-red-500 p-3 rounded text-xs text-red-700 mb-6">
                 {projError}
               </div>
             )}
 
-            {/* Project Metadata */}
-            <div className="space-y-4">
-              <h3 className="font-bold text-xs uppercase text-indigo-900 tracking-wider flex items-center">
-                <Layers className="w-4 h-4 mr-1.5" /> Project Metadata
-              </h3>
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Project Name</label>
-                  <input
-                    type="text"
-                    required
-                    value={projName}
-                    onChange={(e) => setProjName(e.target.value)}
-                    placeholder="e.g. Smart Campus Booking Portal"
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                  />
-                </div>
-                <div className="md:col-span-2">
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Overall Project Description</label>
-                  <textarea
-                    required
-                    rows={2}
-                    value={projDesc}
-                    onChange={(e) => setProjDesc(e.target.value)}
-                    placeholder="Describe what the overall project accomplishes..."
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                  />
-                </div>
+            {/* STEP 1: PROJECT DETAILS */}
+            {projStep === 1 && (
+              <div className="max-w-2xl mx-auto space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Start Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={projStartDate}
-                    onChange={(e) => setProjStartDate(e.target.value)}
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                  />
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide flex items-center">
+                    <Layers className="w-4 h-4 mr-1.5 text-indigo-900" /> Overall Project Details
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">Specify overall metadata of your personal build or team repository.</p>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">End Date</label>
-                  <input
-                    type="date"
-                    required
-                    value={projEndDate}
-                    onChange={(e) => setProjEndDate(e.target.value)}
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                  />
+
+                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-2">Project Name</label>
+                    <input
+                      type="text"
+                      value={projName}
+                      onChange={(e) => setProjName(e.target.value)}
+                      placeholder="e.g. Smart Campus Booking Portal"
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-2">Overall Project Description</label>
+                    <textarea
+                      rows={2}
+                      value={projDesc}
+                      onChange={(e) => setProjDesc(e.target.value)}
+                      placeholder="Describe what the overall system accomplishes..."
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">Start Date</label>
+                    <input
+                      type="date"
+                      value={projStartDate}
+                      onChange={(e) => setProjStartDate(e.target.value)}
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">End Date (or Target Completion)</label>
+                    <input
+                      type="date"
+                      value={projEndDate}
+                      onChange={(e) => setProjEndDate(e.target.value)}
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Repository URL (optional)</label>
-                  <input
-                    type="url"
-                    value={projRepoUrl}
-                    onChange={(e) => setProjRepoUrl(e.target.value)}
-                    placeholder="https://github.com/..."
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                  />
-                </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Hosting/Demo URL (optional &bull; Hosting is not a prerequisite)</label>
-                  <input
-                    type="url"
-                    value={projDemoUrl}
-                    onChange={(e) => setProjDemoUrl(e.target.value)}
-                    placeholder="https://..."
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                  />
+
+                <div className="flex justify-end pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (projName && projDesc && projStartDate && projEndDate) {
+                        setProjError('');
+                        setProjStep(2);
+                      } else {
+                        setProjError('Please enter the project name, description, and start/end dates.');
+                      }
+                    }}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    Continue
+                  </button>
                 </div>
               </div>
-            </div>
+            )}
 
-            {/* Individual Contribution */}
-            <div className="space-y-4 pt-4 border-t border-slate-100">
-              <h3 className="font-bold text-xs uppercase text-indigo-900 tracking-wider flex items-center">
-                <Code className="w-4 h-4 mr-1.5" /> My Individual Contribution
-              </h3>
-              <div className="space-y-4">
+            {/* STEP 2: YOUR CONTRIBUTION */}
+            {projStep === 2 && (
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide flex items-center">
+                    <Code className="w-4 h-4 mr-1.5 text-indigo-900" /> My Individual Contribution
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1 leading-relaxed">
+                    Specify what **you** individually coded or designed. Do not claim team work as solo contribution.
+                  </p>
+                </div>
+
+                <div className="space-y-4">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-2">My Specific Role in Project</label>
+                      <input
+                        type="text"
+                        value={projRole}
+                        onChange={(e) => setProjRole(e.target.value)}
+                        placeholder="e.g. Backend Dev, Database Lead"
+                        className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                      />
+                    </div>
+                    <div>
+                      <label className="block text-xs font-bold text-slate-700 mb-2">Technologies / Skills Used</label>
+                      <input
+                        type="text"
+                        value={projTech}
+                        onChange={(e) => setProjTech(e.target.value)}
+                        placeholder="e.g. React, Express, PostgreSQL"
+                        className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                      />
+                    </div>
+                  </div>
+                  <div>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">My Specific Contribution & Work Details</label>
+                    <textarea
+                      rows={3}
+                      value={projCont}
+                      onChange={(e) => setProjCont(e.target.value)}
+                      placeholder="Describe exactly what code modules, schemas, or components you built..."
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
+                    />
+                  </div>
+                </div>
+
+                <div className="flex justify-between pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setProjStep(1)}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      if (projRole && projTech && projCont) {
+                        setProjError('');
+                        setProjStep(3);
+                      } else {
+                        setProjError('Please specify your project role, tech stack, and individual contribution.');
+                      }
+                    }}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    Continue
+                  </button>
+                </div>
+              </div>
+            )}
+
+            {/* STEP 3: EVIDENCE */}
+            {projStep === 3 && (
+              <div className="max-w-2xl mx-auto space-y-6">
+                <div>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide flex items-center">
+                    <Globe className="w-4 h-4 mr-1.5 text-indigo-900" /> Project Reference Links & Files
+                  </h3>
+                  <p className="text-xs text-slate-500 mt-1">Provide links or upload documentation to aid review (optional).</p>
+                </div>
+
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">My Role in Project</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">Repository URL (GitHub/GitLab)</label>
                     <input
-                      type="text"
-                      required
-                      value={projRole}
-                      onChange={(e) => setProjRole(e.target.value)}
-                      placeholder="e.g. Backend Dev, Database Lead"
-                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
+                      type="url"
+                      value={projRepoUrl}
+                      onChange={(e) => setProjRepoUrl(e.target.value)}
+                      placeholder="https://github.com/..."
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
                     />
                   </div>
                   <div>
-                    <label className="block text-xs font-bold text-slate-700 mb-1">Technologies/Skills Used</label>
+                    <label className="block text-xs font-bold text-slate-700 mb-2">Hosting / Live Demo URL</label>
                     <input
-                      type="text"
-                      required
-                      value={projTech}
-                      onChange={(e) => setProjTech(e.target.value)}
-                      placeholder="Comma-separated stack, e.g. Node.js, Express, PostgreSQL"
-                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
+                      type="url"
+                      value={projDemoUrl}
+                      onChange={(e) => setProjDemoUrl(e.target.value)}
+                      placeholder="https://demo.platform.com"
+                      className="border border-slate-350 rounded-lg w-full px-3 py-2 text-xs text-slate-900 focus:outline-none bg-white font-semibold"
                     />
                   </div>
+                  <div className="md:col-span-2">
+                    <label className="block text-xs font-bold text-slate-700 mb-2">Upload Documentation / Screenshots (Max 5MB)</label>
+                    <input
+                      type="file"
+                      accept=".pdf,.png,.jpg,.jpeg,.webp"
+                      onChange={(e) => handleFileChange(e, 'project')}
+                      className="border border-slate-350 rounded-lg w-full px-3 py-1.5 text-xs text-slate-950 bg-white cursor-pointer"
+                    />
+                    {uploadingProj && <span className="text-[10px] text-indigo-900 font-bold block mt-1 animate-pulse">Uploading file...</span>}
+                    {uploadedProjName && (
+                      <span className="text-[10px] text-emerald-600 font-bold block mt-1">
+                        ✓ Uploaded: {uploadedProjName}
+                      </span>
+                    )}
+                  </div>
                 </div>
-                <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">My Specific Contribution & Work Details</label>
-                  <textarea
-                    required
-                    rows={3}
-                    value={projCont}
-                    onChange={(e) => setProjCont(e.target.value)}
-                    placeholder="Describe exactly what code/modules you built (designed APIs, schema migration)..."
-                    className="border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none bg-white"
-                  />
+
+                <div className="flex justify-between pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setProjStep(2)}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => setProjStep(4)}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    Continue to Review
+                  </button>
                 </div>
+              </div>
+            )}
+
+            {/* STEP 4: REVIEW */}
+            {projStep === 4 && (
+              <div className="max-w-2xl mx-auto space-y-6">
                 <div>
-                  <label className="block text-xs font-bold text-slate-700 mb-1">Upload Project Documentation/Screenshot (optional &bull; Max 5MB)</label>
-                  <input
-                    type="file"
-                    accept=".pdf,.png,.jpg,.jpeg,.webp"
-                    onChange={(e) => handleFileChange(e, 'project')}
-                    className="border border-slate-350 rounded-lg w-full px-3 py-1 text-xs text-slate-950 bg-white cursor-pointer"
-                  />
-                  {uploadingProj && <span className="text-[10px] text-indigo-900 font-bold block mt-1 animate-pulse">Uploading file...</span>}
-                  {uploadedProjName && (
-                    <span className="text-[10px] text-emerald-600 font-bold block mt-1">
-                      ✓ Uploaded: {uploadedProjName}
-                    </span>
+                  <h3 className="text-sm font-extrabold text-slate-900 uppercase tracking-wide">Review & Route Project</h3>
+                  <p className="text-xs text-slate-500 mt-1">Verify details before final validation routing.</p>
+                </div>
+
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-5 space-y-4 text-xs">
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Project Name</span>
+                    <span className="font-semibold text-slate-900 mt-0.5 block">{projName}</span>
+                  </div>
+                  <div className="grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Start Date</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{projStartDate}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">End Date</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{projEndDate}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Project Description</span>
+                    <p className="font-semibold text-slate-800 mt-0.5 leading-relaxed">{projDesc}</p>
+                  </div>
+                  <div className="pt-3 border-t border-slate-200 grid grid-cols-2 gap-4">
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">My Role</span>
+                      <span className="font-semibold text-indigo-950 mt-0.5 block">{projRole}</span>
+                    </div>
+                    <div>
+                      <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Tech Stack</span>
+                      <span className="font-semibold text-slate-900 mt-0.5 block">{projTech}</span>
+                    </div>
+                  </div>
+                  <div>
+                    <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">My Individual Contribution</span>
+                    <p className="font-semibold text-slate-800 mt-0.5 leading-relaxed whitespace-pre-line">{projCont}</p>
+                  </div>
+                  {(projEvidence || projRepoUrl || projDemoUrl) && (
+                    <div className="pt-3 border-t border-slate-200 flex flex-wrap gap-4">
+                      {projEvidence && (
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Documentation File</span>
+                          <span className="font-semibold text-indigo-900 mt-0.5 block">{uploadedProjName || 'project_docs.pdf'}</span>
+                        </div>
+                      )}
+                      {projRepoUrl && (
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Repository</span>
+                          <a href={projRepoUrl} target="_blank" rel="noreferrer" className="text-indigo-900 hover:underline mt-0.5 block truncate max-w-xs">{projRepoUrl}</a>
+                        </div>
+                      )}
+                      {projDemoUrl && (
+                        <div>
+                          <span className="text-slate-400 font-bold block uppercase tracking-wider text-[9px]">Live Demo</span>
+                          <a href={projDemoUrl} target="_blank" rel="noreferrer" className="text-indigo-900 hover:underline mt-0.5 block truncate max-w-xs">{projDemoUrl}</a>
+                        </div>
+                      )}
+                    </div>
                   )}
                 </div>
-              </div>
-            </div>
 
-            {/* Routing indicator */}
-            <div className="p-4 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-900 flex gap-3.5">
-              <Info className="w-5 h-5 shrink-0 mt-0.5" />
-              <div>
-                <span className="font-bold text-sm block">Verification Route: Faculty / Teacher Guardian</span>
-                <p className="text-xs mt-1 leading-relaxed">
-                  Project records and specific student code contributions are automatically routed to your assigned Faculty Advisor or Teacher Guardian for official institutional review.
-                </p>
-              </div>
-            </div>
+                <div className="p-4 rounded-xl border bg-indigo-50 border-indigo-200 text-indigo-900 flex gap-3.5">
+                  <Info className="w-5 h-5 shrink-0 mt-0.5" />
+                  <div>
+                    <span className="font-bold text-sm block">Verification Route: Faculty / Teacher Guardian</span>
+                    <p className="text-xs mt-1 leading-relaxed">
+                      Project records and specific student code contributions are automatically routed to your assigned Faculty Advisor or Teacher Guardian for official institutional review.
+                    </p>
+                  </div>
+                </div>
 
-            <div className="flex justify-end space-x-3 pt-4 border-t border-slate-100">
-              <button
-                type="button"
-                onClick={() => setActiveTab('view')}
-                className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50"
-              >
-                Cancel
-              </button>
-              <button
-                type="submit"
-                disabled={projLoading}
-                className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
-              >
-                {projLoading ? 'Saving...' : 'Save Project Contribution'}
-              </button>
-            </div>
-          </form>
+                <form onSubmit={handleAddProject} className="flex justify-between pt-4 border-t border-slate-100">
+                  <button
+                    type="button"
+                    onClick={() => setProjStep(3)}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50 flex items-center"
+                  >
+                    <ArrowLeft className="w-3.5 h-3.5 mr-1" /> Back
+                  </button>
+                  <button
+                    type="submit"
+                    disabled={projLoading}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    {projLoading ? 'Saving...' : 'Submit Project Record'}
+                  </button>
+                </form>
+              </div>
+            )}
+
+            {/* STEP 5: SUCCESS */}
+            {projStep === 5 && (
+              <div className="max-w-md mx-auto text-center py-8 space-y-6">
+                <div className="w-16 h-16 bg-emerald-50 text-emerald-600 rounded-full flex items-center justify-center mx-auto shadow-sm">
+                  <CheckCircle2 className="w-8 h-8" />
+                </div>
+                <div>
+                  <h3 className="text-lg font-bold text-slate-900">Project Contribution Saved</h3>
+                  <p className="text-xs text-slate-500 mt-2 leading-relaxed">
+                    Your software project build details and specific technical contribution have been recorded.
+                  </p>
+                </div>
+                <div className="bg-slate-50 border border-slate-200 rounded-xl p-4 text-xs font-semibold text-slate-700">
+                  Initial Status: <span className="text-amber-700">Pending Review (Faculty Advisor)</span>
+                </div>
+                <div className="flex justify-center space-x-3 pt-4">
+                  <button
+                    type="button"
+                    onClick={() => {
+                      setProjStep(1);
+                      setActiveTab('view');
+                    }}
+                    className="px-4 py-2 border border-slate-200 text-xs font-semibold rounded-lg hover:bg-slate-50"
+                  >
+                    View Passport Ledger
+                  </button>
+                  <button
+                    type="button"
+                    onClick={() => {
+                      // Reset states
+                      setProjName('');
+                      setProjDesc('');
+                      setProjStartDate('');
+                      setProjEndDate('');
+                      setProjRepoUrl('');
+                      setProjDemoUrl('');
+                      setProjEvidence('');
+                      setUploadedProjName('');
+                      setProjRole('');
+                      setProjCont('');
+                      setProjTech('');
+                      setProjStep(1);
+                    }}
+                    className="px-4 py-2 bg-indigo-900 hover:bg-indigo-950 text-white text-xs font-bold rounded-lg shadow-sm"
+                  >
+                    Record Another Project
+                  </button>
+                </div>
+              </div>
+            )}
+          </div>
         </div>
       )}
     </div>

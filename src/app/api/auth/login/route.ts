@@ -7,7 +7,7 @@ export async function POST(request: Request) {
   try {
     const { email, password } = await request.json();
 
-    const user = await prisma.user.findUnique({
+    let user = await prisma.user.findUnique({
       where: { email },
       include: {
         student: true,
@@ -16,6 +16,26 @@ export async function POST(request: Request) {
         principal: true,
       },
     });
+
+    if (!user) {
+      // Fallback check: check if it matches a student's personalEmail for permanent alumni access
+      const studentProfile = await prisma.student.findFirst({
+        where: { personalEmail: email },
+        include: {
+          user: {
+            include: {
+              student: true,
+              faculty: true,
+              coordinator: true,
+              principal: true,
+            }
+          }
+        }
+      });
+      if (studentProfile) {
+        user = studentProfile.user;
+      }
+    }
 
     if (!user || user.passwordHash !== password) {
       return NextResponse.json(

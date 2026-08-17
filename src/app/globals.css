@@ -19,6 +19,27 @@ body {
 
 /* Print optimizations for the Student Development Report PDF */
 @media print {
+  @page {
+    size: auto;
+    margin: 15mm;
+  }
+
+  html, body, div, main, section {
+    overflow: visible !important;
+    height: auto !important;
+    min-height: 0 !important;
+    max-height: none !important;
+    position: static !important;
+  }
+
+  /* Hide scrollbars during print */
+  * {
+    scrollbar-width: none !important; /* Firefox */
+  }
+  *::-webkit-scrollbar {
+    display: none !important; /* Chrome/Webkit */
+  }
+
   body {
     background: white !important;
     color: black !important;
