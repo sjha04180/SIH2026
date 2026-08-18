@@ -35,16 +35,45 @@ export async function POST(request: Request) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 });
     }
 
-    const { skillId, level } = await request.json();
-    if (!skillId || !level) {
-      return NextResponse.json({ error: 'Missing skillId or level' }, { status: 400 });
+    const { skillId, customSkillName, customSkillCategory, level } = await request.json();
+    if ((!skillId && !customSkillName) || !level) {
+      return NextResponse.json({ error: 'Missing skill selection/name or level' }, { status: 400 });
+    }
+
+    let targetSkillId = skillId;
+
+    if (customSkillName && customSkillName.trim()) {
+      const trimmedName = customSkillName.trim();
+      const category = customSkillCategory || 'Technical';
+
+      // Check if skill already exists in catalog (case-insensitive)
+      let skill = await prisma.skill.findFirst({
+        where: {
+          name: {
+            equals: trimmedName,
+            mode: 'insensitive',
+          },
+        },
+      });
+
+      if (!skill) {
+        // Create new skill in the catalog
+        skill = await prisma.skill.create({
+          data: {
+            name: trimmedName,
+            category,
+          },
+        });
+      }
+
+      targetSkillId = skill.id;
     }
 
     // Check if link already exists
     const existing = await prisma.studentSkill.findFirst({
       where: {
         studentId: session.profileId,
-        skillId,
+        skillId: targetSkillId,
       },
     });
 
@@ -59,7 +88,7 @@ export async function POST(request: Request) {
     const studentSkill = await prisma.studentSkill.create({
       data: {
         studentId: session.profileId,
-        skillId,
+        skillId: targetSkillId,
         level,
         status: 'SELF_DECLARED',
       },

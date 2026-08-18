@@ -39,6 +39,8 @@ interface SkillsClientProps {
 
 export default function SkillsClient({ initialStudentSkills, catalogSkills }: SkillsClientProps) {
   const [selectedSkillId, setSelectedSkillId] = useState('');
+  const [customSkillName, setCustomSkillName] = useState('');
+  const [customSkillCategory, setCustomSkillCategory] = useState('Backend');
   const [level, setLevel] = useState('Beginner');
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
@@ -50,8 +52,8 @@ export default function SkillsClient({ initialStudentSkills, catalogSkills }: Sk
 
   const handleAddSkill = async (e: React.FormEvent) => {
     e.preventDefault();
-    if (!selectedSkillId) {
-      setError('Please select a skill from the catalog.');
+    if (!selectedSkillId && !customSkillName.trim()) {
+      setError('Please select a skill from the catalog or write your own.');
       return;
     }
 
@@ -62,13 +64,19 @@ export default function SkillsClient({ initialStudentSkills, catalogSkills }: Sk
       const response = await fetch('/api/student/skills', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ skillId: selectedSkillId, level }),
+        body: JSON.stringify({
+          skillId: selectedSkillId || undefined,
+          customSkillName: customSkillName.trim() || undefined,
+          customSkillCategory: customSkillName.trim() ? customSkillCategory : undefined,
+          level,
+        }),
       });
 
       const data = await response.json();
       if (!response.ok) throw new Error(data.error || 'Failed to add skill');
 
       setSelectedSkillId('');
+      setCustomSkillName('');
       setLevel('Beginner');
       router.refresh();
     } catch (err: any) {
@@ -139,7 +147,12 @@ export default function SkillsClient({ initialStudentSkills, catalogSkills }: Sk
               <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Select Skill</label>
               <select
                 value={selectedSkillId}
-                onChange={(e) => setSelectedSkillId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedSkillId(e.target.value);
+                  if (e.target.value) {
+                    setCustomSkillName('');
+                  }
+                }}
                 className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900"
               >
                 <option value="">-- Choose technology --</option>
@@ -148,6 +161,48 @@ export default function SkillsClient({ initialStudentSkills, catalogSkills }: Sk
                 ))}
               </select>
             </div>
+
+            <div className="relative flex py-1 items-center">
+              <div className="flex-grow border-t border-slate-200"></div>
+              <span className="flex-shrink mx-4 text-slate-400 text-[10px] uppercase font-bold tracking-wider">OR</span>
+              <div className="flex-grow border-t border-slate-200"></div>
+            </div>
+
+            {/* Custom Skill */}
+            <div>
+              <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Write Custom Skill</label>
+              <input
+                type="text"
+                placeholder="e.g. Docker, AWS, Kubernetes"
+                value={customSkillName}
+                onChange={(e) => {
+                  setCustomSkillName(e.target.value);
+                  if (e.target.value) {
+                    setSelectedSkillId('');
+                  }
+                }}
+                className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900 placeholder:text-slate-400"
+              />
+            </div>
+
+            {customSkillName.trim() !== '' && (
+              <div>
+                <label className="block text-xs font-bold text-slate-700 uppercase tracking-wider mb-2">Skill Category</label>
+                <select
+                  value={customSkillCategory}
+                  onChange={(e) => setCustomSkillCategory(e.target.value)}
+                  className="bg-slate-50 border border-slate-350 rounded-lg w-full px-3 py-2 text-sm text-slate-900 focus:outline-none focus:ring-1 focus:ring-indigo-900"
+                >
+                  <option value="Backend">Backend</option>
+                  <option value="Frontend">Frontend</option>
+                  <option value="Database">Database</option>
+                  <option value="Cloud">Cloud</option>
+                  <option value="Mobile">Mobile</option>
+                  <option value="Devops">Devops</option>
+                  <option value="SoftSkills">Soft Skills</option>
+                </select>
+              </div>
+            )}
 
             {/* Select Level */}
             <div>
@@ -165,7 +220,7 @@ export default function SkillsClient({ initialStudentSkills, catalogSkills }: Sk
 
             <button
               type="submit"
-              disabled={loading || availableSkills.length === 0}
+              disabled={loading || (!selectedSkillId && !customSkillName.trim())}
               className="w-full py-2 bg-indigo-900 hover:bg-indigo-950 text-white rounded-lg text-xs font-bold shadow-sm transition-colors flex items-center justify-center disabled:opacity-60 cursor-pointer"
             >
               {loading ? (
@@ -177,8 +232,8 @@ export default function SkillsClient({ initialStudentSkills, catalogSkills }: Sk
               )}
             </button>
 
-            {availableSkills.length === 0 && (
-              <p className="text-[10px] text-slate-400 italic text-center">All catalog skills already declared.</p>
+            {availableSkills.length === 0 && !customSkillName.trim() && (
+              <p className="text-[10px] text-slate-400 italic text-center">All catalog skills already declared. You can still write a custom skill above.</p>
             )}
           </form>
         </div>
