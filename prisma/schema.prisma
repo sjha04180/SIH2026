@@ -293,3 +293,12 @@ model AuditLog {
   ipAddress String?
   createdAt DateTime @default(now())
 }
+
+model UploadedFile {
+  id        String   @id @default(uuid())
+  filename  String   @unique
+  mimeType  String
+  data      Bytes    // Stores the file content as binary (bytea)
+  createdAt DateTime @default(now())
+}
+

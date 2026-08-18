@@ -1,7 +1,6 @@
 // src/app/api/upload/route.ts
 import { NextResponse } from 'next/server';
-import { writeFile, mkdir } from 'fs/promises';
-import { join } from 'path';
+import { prisma } from '@/lib/db';
 
 export async function POST(request: Request) {
   try {
@@ -19,18 +18,17 @@ export async function POST(request: Request) {
     const cleanFileName = file.name.replace(/[^a-zA-Z0-9.-]/g, '_');
     const filename = `${Date.now()}-${cleanFileName}`;
     
-    // Path inside public folder
-    const publicDir = join(process.cwd(), 'public', 'uploads');
-    
-    // Ensure the uploads directory exists
-    await mkdir(publicDir, { recursive: true });
+    // Save to database
+    await prisma.uploadedFile.create({
+      data: {
+        filename,
+        mimeType: file.type || 'application/octet-stream',
+        data: buffer,
+      },
+    });
 
-    // Write file to filesystem
-    const filePath = join(publicDir, filename);
-    await writeFile(filePath, buffer);
-
-    // Publicly accessible URL path
-    const fileUrl = `/uploads/${filename}`;
+    // Publicly accessible URL path (served from our database endpoint)
+    const fileUrl = `/api/uploads/${filename}`;
 
     return NextResponse.json({ 
       success: true, 
