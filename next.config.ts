@@ -1,7 +1,15 @@
 import type { NextConfig } from "next";
 
 const nextConfig: NextConfig = {
-  /* config options here */
+  async redirects() {
+    return [
+      {
+        source: '/uploads/:filename*',
+        destination: '/api/uploads/:filename*',
+        permanent: true,
+      },
+    ];
+  },
 };
 
 export default nextConfig;
